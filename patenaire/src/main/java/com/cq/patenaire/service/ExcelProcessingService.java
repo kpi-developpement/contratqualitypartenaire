@@ -2,6 +2,7 @@ package com.cq.patenaire.service;
 
 import com.cq.patenaire.dto.IndicatorResult;
 import com.cq.patenaire.dto.ReportResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -15,6 +16,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+@Slf4j
 @Service
 public class ExcelProcessingService {
 
@@ -25,6 +27,8 @@ public class ExcelProcessingService {
 
     public ReportResponse processFile(MultipartFile file) throws Exception {
         String filename = file.getOriginalFilename();
+        log.info("Début du traitement du fichier : {}", filename);
+
         ReportResponse response = new ReportResponse();
 
         if (filename != null && filename.toLowerCase().endsWith(".csv")) {
@@ -34,18 +38,18 @@ public class ExcelProcessingService {
         }
 
         calculateFinalResults(response);
+        log.info("Traitement terminé avec succès.");
         return response;
     }
 
     private void processCsv(MultipartFile file, ReportResponse response) throws Exception {
-        // Essayer d'abord avec le point-virgule (Standard Excel FR)
+        log.info("Tentative de parsing CSV avec délimiteur ';'");
         boolean success = tryParseCsv(file, response, ';');
 
-        // Si ça échoue (souvent à cause d'une seule colonne détectée), essayer avec la virgule
         if (!success) {
+            log.warn("Échec avec ';'. Tentative de parsing CSV avec délimiteur ','");
             boolean fallbackSuccess = tryParseCsv(file, response, ',');
             if (!fallbackSuccess) {
-                // Si les deux échouent, l'erreur a déjà été levée dans tryParseCsv avec les détails
                 throw new RuntimeException("Impossible de parser le CSV avec ';' ou ','. Vérifiez le format du fichier.");
             }
         }
@@ -68,29 +72,27 @@ public class ExcelProcessingService {
                 throw new RuntimeException("Le fichier CSV est vide ou n'a pas d'en-tête.");
             }
 
-            // Nettoyer les noms des colonnes (Enlever BOM, guillemets, espaces)
             Map<String, Integer> cleanHeaderMap = new HashMap<>();
             for (Map.Entry<String, Integer> entry : rawHeaderMap.entrySet()) {
                 cleanHeaderMap.put(cleanHeaderName(entry.getKey()), entry.getValue());
             }
 
-            // Si le délimiteur est mauvais, il va tout mettre dans une seule colonne
             if (cleanHeaderMap.size() <= 1 && delimiter == ';') {
-                return false; // Forcer le fallback vers la virgule
+                return false;
             }
 
-            // Vérifier les colonnes manquantes avec des détails précis
             validateHeaders(cleanHeaderMap.keySet());
 
-            // Traitement des lignes
+            int rowCount = 0;
             for (CSVRecord record : csvParser) {
-                // On utilise l'index pour récupérer la valeur car le nom de la colonne dans CSVRecord n'est pas nettoyé
                 String zoneStatutRaw = record.get(cleanHeaderMap.get(COL_ZONE_STATUT.toLowerCase()));
                 String rangRdv = record.get(cleanHeaderMap.get(COL_RANG_RDV.toLowerCase()));
                 String statutCr = record.get(cleanHeaderMap.get(COL_STATUT_CR.toLowerCase()));
 
                 extractAndComputeRow(zoneStatutRaw, rangRdv, statutCr, response);
+                rowCount++;
             }
+            log.info("CSV parsé avec succès. Nombre de lignes traitées : {}", rowCount);
             return true;
         }
     }
@@ -112,13 +114,13 @@ public class ExcelProcessingService {
                 }
             }
 
-            // Vérifier les colonnes manquantes avec des détails précis
             validateHeaders(colIndices.keySet());
 
             int idxZoneStatut = colIndices.get(COL_ZONE_STATUT.toLowerCase());
             int idxRangRdv = colIndices.get(COL_RANG_RDV.toLowerCase());
             int idxStatutCr = colIndices.get(COL_STATUT_CR.toLowerCase());
 
+            int rowCount = 0;
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
@@ -128,19 +130,15 @@ public class ExcelProcessingService {
                 String statutCr = getCellValueAsString(row.getCell(idxStatutCr));
 
                 extractAndComputeRow(zoneStatutRaw, rangRdv, statutCr, response);
+                rowCount++;
             }
+            log.info("Excel parsé avec succès. Nombre de lignes traitées : {}", rowCount);
         }
     }
 
-    // --- MÉTHODES UTILITAIRES ET LOGIQUE MÉTIER ---
-
     private String cleanHeaderName(String header) {
         if (header == null) return "";
-        // Enlever le BOM UTF-8 (\uFEFF), les guillemets, les espaces superflus, et mettre en minuscule
-        return header.replace("\uFEFF", "")
-                .replace("\"", "")
-                .trim()
-                .toLowerCase();
+        return header.replace("\uFEFF", "").replace("\"", "").trim().toLowerCase();
     }
 
     private void validateHeaders(Set<String> foundHeaders) {
@@ -158,12 +156,9 @@ public class ExcelProcessingService {
         }
 
         if (!missingHeaders.isEmpty()) {
-            // Construire un message d'erreur ultra précis
-            String errorMsg = String.format(
-                    "Colonnes manquantes : [%s]. Colonnes trouvées dans le fichier : [%s]",
-                    String.join(", ", missingHeaders),
-                    String.join(", ", foundHeaders)
-            );
+            String errorMsg = String.format("Colonnes manquantes : [%s]. Colonnes trouvées : [%s]",
+                    String.join(", ", missingHeaders), String.join(", ", foundHeaders));
+            log.error(errorMsg);
             throw new RuntimeException(errorMsg);
         }
     }
@@ -175,7 +170,14 @@ public class ExcelProcessingService {
         String statutCr = statutCrRaw != null ? statutCrRaw.trim() : "";
 
         String[] parts = zoneStatutRaw.split("\\r?\\n");
-        String activity = parts.length > 0 ? parts[0].trim() : "";
+        String activityRaw = parts.length > 0 ? parts[0].trim().toUpperCase() : "";
+
+        // Extraction Bulletproof de l'activité
+        String activity = "";
+        if (activityRaw.contains("PLP")) activity = "PLP";
+        else if (activityRaw.contains("CONSTRUCTION")) activity = "Construction";
+        else if (activityRaw.contains("HOTLINE")) activity = "Hotline";
+
         String zoneRaw = parts.length > 1 ? parts[1].trim() : "";
         String zone = extractZoneLetter(zoneRaw);
 
@@ -183,7 +185,7 @@ public class ExcelProcessingService {
         boolean isRang1 = rangRdv.equals("1") || rangRdv.equals("1.0");
 
         if (isRang1) {
-            if (response.getPerfRang1().containsKey(activity) && response.getPerfRang1().get(activity).containsKey(zone)) {
+            if (!activity.isEmpty() && response.getPerfRang1().containsKey(activity) && response.getPerfRang1().get(activity).containsKey(zone)) {
                 IndicatorResult ind = response.getPerfRang1().get(activity).get(zone);
                 ind.setDenum(ind.getDenum() + 1);
                 if (isCrOk) ind.setNum(ind.getNum() + 1);
@@ -198,9 +200,10 @@ public class ExcelProcessingService {
     }
 
     private String extractZoneLetter(String zoneRaw) {
-        if (zoneRaw.toUpperCase().contains("A")) return "A";
-        if (zoneRaw.toUpperCase().contains("B")) return "B";
-        if (zoneRaw.toUpperCase().contains("C")) return "C";
+        String upperZone = zoneRaw.toUpperCase();
+        if (upperZone.contains("A")) return "A";
+        if (upperZone.contains("B")) return "B";
+        if (upperZone.contains("C")) return "C";
         return "UNKNOWN";
     }
 

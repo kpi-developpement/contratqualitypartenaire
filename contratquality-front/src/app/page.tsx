@@ -10,7 +10,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Extraction intelligente des données (supporte CamelCase et SnakeCase)
+  // Extraction intelligente des données
   const rang1Data = reportData ? (reportData.perf_rang_1 || reportData.perfRang1) : undefined;
 
   return (
@@ -31,7 +31,7 @@ export default function Home() {
         <div className="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <FileUpload 
             onUploadSuccess={(data) => {
-              console.log("Données reçues du backend:", data); // Pour debugger dans la console du navigateur
+              console.log("JSON reçu :", data);
               setReportData(data);
             }}
             onUploadError={(err) => setError(err)}
@@ -55,6 +55,14 @@ export default function Home() {
         {reportData && rang1Data && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Rang1Table data={rang1Data} />
+          </div>
+        )}
+
+        {/* DEBUG MODE : Si on a reçu des données mais que le tableau ne s'affiche pas */}
+        {reportData && !rang1Data && (
+          <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-800 overflow-auto">
+            <p className="font-bold mb-2">⚠️ Données reçues mais format inattendu (Debug) :</p>
+            <pre>{JSON.stringify(reportData, null, 2)}</pre>
           </div>
         )}
 
