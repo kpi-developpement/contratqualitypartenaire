@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
 
   cq-backend:
-    build: ./backend
+    build: ./patenaire # <-- Tbedlat hna bach t-matchi smyat l'dossier
     container_name: cq-partenaire-backend
     depends_on:
       - cq-db
@@ -29,13 +29,12 @@ services:
     restart: unless-stopped
 
   cq-frontend:
-    build: ./frontend
+    build: ./contratquality-front # <-- Tbedlat hna bach t-matchi smyat l'dossier
     container_name: cq-partenaire-frontend
     depends_on:
       - cq-backend
     environment:
       - PORT=3118
-      # L'IP dyal server dyalk t-ajouta hna
       - NEXT_PUBLIC_API_URL=http://10.10.10.25:6355/api/v1
     ports:
       - "3118:3118"
