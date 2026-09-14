@@ -4,7 +4,8 @@ FROM node:20-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci
+# L'FIX HNA : Kheddemna npm install f blast npm ci bach n-évitiw l'mochkil dyal lockfile sync
+RUN npm install
 
 # Étape 2 : Build
 FROM base AS builder
