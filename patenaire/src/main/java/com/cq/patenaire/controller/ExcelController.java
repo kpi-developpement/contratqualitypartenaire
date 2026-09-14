@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/excel")
-@CrossOrigin(origins = "*") // A adapter plus tard avec l'URL de Next.js (ex: http://localhost:3118)
+@CrossOrigin(origins = "*")
 public class ExcelController {
 
     private final ExcelProcessingService excelProcessingService;
@@ -32,7 +32,8 @@ public class ExcelController {
         }
 
         try {
-            ReportResponse result = excelProcessingService.processExcelFile(file);
+            // Appel à la nouvelle méthode unifiée (Excel + CSV)
+            ReportResponse result = excelProcessingService.processFile(file);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();

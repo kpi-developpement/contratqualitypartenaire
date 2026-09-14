@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+import { uploadExcelFile } from "@/services/api";
 
 interface FileUploadProps {
   onUploadSuccess: (data: any) => void;
   onUploadError: (error: string) => void;
   onLoading: (isLoading: boolean) => void;
 }
-
-import { uploadExcelFile } from "@/services/api";
 
 export default function FileUpload({ onUploadSuccess, onUploadError, onLoading }: FileUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -39,7 +38,7 @@ export default function FileUpload({ onUploadSuccess, onUploadError, onLoading }
     <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
       <input
         type="file"
-        accept=".xlsx, .xls"
+        accept=".xlsx, .xls, .csv"
         onChange={handleFileChange}
         className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4 cursor-pointer"
       />

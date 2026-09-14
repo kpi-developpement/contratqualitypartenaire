@@ -1,7 +1,7 @@
 import { ReportResponse } from "@/types";
 
-// Kay-9ra l'URL mn l'environnement (Docker) ola kay-dir localhost par défaut
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:6355/api/v1";
+// L'IP exacte dyal server dyalk
+const API_BASE_URL = "http://10.10.10.25:6355/api/v1";
 
 export const uploadExcelFile = async (file: File): Promise<ReportResponse> => {
   const formData = new FormData();
