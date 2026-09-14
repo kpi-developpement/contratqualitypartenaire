@@ -13,8 +13,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class ExcelProcessingService {
@@ -39,11 +38,24 @@ public class ExcelProcessingService {
     }
 
     private void processCsv(MultipartFile file, ReportResponse response) throws Exception {
-        // Configuration CSV : Accepte le point-virgule (standard Excel FR) ou la virgule
+        // Essayer d'abord avec le point-virgule (Standard Excel FR)
+        boolean success = tryParseCsv(file, response, ';');
+
+        // Si ça échoue (souvent à cause d'une seule colonne détectée), essayer avec la virgule
+        if (!success) {
+            boolean fallbackSuccess = tryParseCsv(file, response, ',');
+            if (!fallbackSuccess) {
+                // Si les deux échouent, l'erreur a déjà été levée dans tryParseCsv avec les détails
+                throw new RuntimeException("Impossible de parser le CSV avec ';' ou ','. Vérifiez le format du fichier.");
+            }
+        }
+    }
+
+    private boolean tryParseCsv(MultipartFile file, ReportResponse response, char delimiter) throws Exception {
         CSVFormat format = CSVFormat.Builder.create()
                 .setHeader()
                 .setSkipHeaderRecord(true)
-                .setDelimiter(';') // Changer à ',' si vos CSV utilisent la virgule
+                .setDelimiter(delimiter)
                 .setIgnoreHeaderCase(true)
                 .setTrim(true)
                 .build();
@@ -51,28 +63,35 @@ public class ExcelProcessingService {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
              CSVParser csvParser = new CSVParser(reader, format)) {
 
-            Map<String, Integer> headerMap = csvParser.getHeaderMap();
-            if (headerMap == null || !headerMap.containsKey(COL_ZONE_STATUT) ||
-                    !headerMap.containsKey(COL_RANG_RDV) || !headerMap.containsKey(COL_STATUT_CR)) {
-
-                // Fallback si le délimiteur était une virgule
-                format = CSVFormat.Builder.create().setHeader().setSkipHeaderRecord(true).setDelimiter(',').setIgnoreHeaderCase(true).setTrim(true).build();
-                try (BufferedReader reader2 = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
-                     CSVParser csvParser2 = new CSVParser(reader2, format)) {
-
-                    if (!csvParser2.getHeaderMap().containsKey(COL_ZONE_STATUT)) {
-                        throw new RuntimeException("Colonnes manquantes dans le fichier CSV.");
-                    }
-                    for (CSVRecord record : csvParser2) {
-                        extractAndComputeRow(record.get(COL_ZONE_STATUT), record.get(COL_RANG_RDV), record.get(COL_STATUT_CR), response);
-                    }
-                }
-                return;
+            Map<String, Integer> rawHeaderMap = csvParser.getHeaderMap();
+            if (rawHeaderMap == null || rawHeaderMap.isEmpty()) {
+                throw new RuntimeException("Le fichier CSV est vide ou n'a pas d'en-tête.");
             }
 
+            // Nettoyer les noms des colonnes (Enlever BOM, guillemets, espaces)
+            Map<String, Integer> cleanHeaderMap = new HashMap<>();
+            for (Map.Entry<String, Integer> entry : rawHeaderMap.entrySet()) {
+                cleanHeaderMap.put(cleanHeaderName(entry.getKey()), entry.getValue());
+            }
+
+            // Si le délimiteur est mauvais, il va tout mettre dans une seule colonne
+            if (cleanHeaderMap.size() <= 1 && delimiter == ';') {
+                return false; // Forcer le fallback vers la virgule
+            }
+
+            // Vérifier les colonnes manquantes avec des détails précis
+            validateHeaders(cleanHeaderMap.keySet());
+
+            // Traitement des lignes
             for (CSVRecord record : csvParser) {
-                extractAndComputeRow(record.get(COL_ZONE_STATUT), record.get(COL_RANG_RDV), record.get(COL_STATUT_CR), response);
+                // On utilise l'index pour récupérer la valeur car le nom de la colonne dans CSVRecord n'est pas nettoyé
+                String zoneStatutRaw = record.get(cleanHeaderMap.get(COL_ZONE_STATUT.toLowerCase()));
+                String rangRdv = record.get(cleanHeaderMap.get(COL_RANG_RDV.toLowerCase()));
+                String statutCr = record.get(cleanHeaderMap.get(COL_STATUT_CR.toLowerCase()));
+
+                extractAndComputeRow(zoneStatutRaw, rangRdv, statutCr, response);
             }
+            return true;
         }
     }
 
@@ -83,20 +102,22 @@ public class ExcelProcessingService {
             Sheet sheet = workbook.getSheetAt(0);
             Row headerRow = sheet.getRow(0);
 
-            if (headerRow == null) throw new RuntimeException("Le fichier Excel est vide.");
+            if (headerRow == null) throw new RuntimeException("Le fichier Excel est vide ou n'a pas d'en-tête.");
 
             Map<String, Integer> colIndices = new HashMap<>();
             for (Cell cell : headerRow) {
-                colIndices.put(getCellValueAsString(cell).trim(), cell.getColumnIndex());
+                String headerName = cleanHeaderName(getCellValueAsString(cell));
+                if (!headerName.isEmpty()) {
+                    colIndices.put(headerName, cell.getColumnIndex());
+                }
             }
 
-            if (!colIndices.containsKey(COL_ZONE_STATUT) || !colIndices.containsKey(COL_RANG_RDV) || !colIndices.containsKey(COL_STATUT_CR)) {
-                throw new RuntimeException("Colonnes manquantes dans le fichier Excel.");
-            }
+            // Vérifier les colonnes manquantes avec des détails précis
+            validateHeaders(colIndices.keySet());
 
-            int idxZoneStatut = colIndices.get(COL_ZONE_STATUT);
-            int idxRangRdv = colIndices.get(COL_RANG_RDV);
-            int idxStatutCr = colIndices.get(COL_STATUT_CR);
+            int idxZoneStatut = colIndices.get(COL_ZONE_STATUT.toLowerCase());
+            int idxRangRdv = colIndices.get(COL_RANG_RDV.toLowerCase());
+            int idxStatutCr = colIndices.get(COL_STATUT_CR.toLowerCase());
 
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
@@ -111,7 +132,42 @@ public class ExcelProcessingService {
         }
     }
 
-    // L'Algorithme unifié (Business Logic)
+    // --- MÉTHODES UTILITAIRES ET LOGIQUE MÉTIER ---
+
+    private String cleanHeaderName(String header) {
+        if (header == null) return "";
+        // Enlever le BOM UTF-8 (\uFEFF), les guillemets, les espaces superflus, et mettre en minuscule
+        return header.replace("\uFEFF", "")
+                .replace("\"", "")
+                .trim()
+                .toLowerCase();
+    }
+
+    private void validateHeaders(Set<String> foundHeaders) {
+        List<String> requiredHeaders = Arrays.asList(
+                COL_ZONE_STATUT.toLowerCase(),
+                COL_RANG_RDV.toLowerCase(),
+                COL_STATUT_CR.toLowerCase()
+        );
+
+        List<String> missingHeaders = new ArrayList<>();
+        for (String req : requiredHeaders) {
+            if (!foundHeaders.contains(req)) {
+                missingHeaders.add(req);
+            }
+        }
+
+        if (!missingHeaders.isEmpty()) {
+            // Construire un message d'erreur ultra précis
+            String errorMsg = String.format(
+                    "Colonnes manquantes : [%s]. Colonnes trouvées dans le fichier : [%s]",
+                    String.join(", ", missingHeaders),
+                    String.join(", ", foundHeaders)
+            );
+            throw new RuntimeException(errorMsg);
+        }
+    }
+
     private void extractAndComputeRow(String zoneStatutRaw, String rangRdvRaw, String statutCrRaw, ReportResponse response) {
         if (zoneStatutRaw == null || zoneStatutRaw.trim().isEmpty()) return;
 
