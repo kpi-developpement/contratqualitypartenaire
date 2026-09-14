@@ -1,0 +1,41 @@
+server:
+  port: ${SERVER_PORT:6355}
+
+spring:
+  application:
+    name: contratquality-partenaire
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/cqpartenaire_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc.batch_size: 400
+        order_inserts: true
+        order_updates: true
+        jdbc.batch_versioned_data: true
+
+  # Configuration pour accepter les fichiers Excel volumineux
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+# Configuration API Externe (Kyntus)
+kyntus:
+  php-api:
+    base-url: ${KYNTUS_PHP_API_BASE_URL:https://bytel.kyntus.fr}
+    sync-key: ${KYNTUS_PHP_API_SYNC_KEY:KYNTUS_SUPER_SECRET_SYNC_KEY_2026_!@#}

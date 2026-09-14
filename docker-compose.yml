@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  cq-db:
+    image: postgres:15-alpine
+    container_name: cq-partenaire-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cqpartenaire_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - cq_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  cq-backend:
+    build: ./backend
+    container_name: cq-partenaire-backend
+    depends_on:
+      - cq-db
+    environment:
+      - SERVER_PORT=6355
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://cq-db:5432/cqpartenaire_db 
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+    ports:
+      - "6355:6355"
+    restart: unless-stopped
+
+  cq-frontend:
+    build: ./frontend
+    container_name: cq-partenaire-frontend
+    depends_on:
+      - cq-backend
+    environment:
+      - PORT=3118
+      # L'IP dyal server dyalk t-ajouta hna
+      - NEXT_PUBLIC_API_URL=http://10.10.10.25:6355/api/v1
+    ports:
+      - "3118:3118"
+    restart: unless-stopped
+
+volumes:
+  cq_pgdata:
