@@ -1,13 +1,16 @@
 "use client";
 
 import React from "react";
-import { ReportResponse } from "@/types";
+import { IndicatorResult } from "@/types";
 
 interface Rang1TableProps {
-  data: ReportResponse["perf_rang_1"];
+  data?: Record<string, Record<string, IndicatorResult>>;
 }
 
 export default function Rang1Table({ data }: Rang1TableProps) {
+  // Sécurité anti-crash : si la donnée est vide, on n'affiche rien
+  if (!data) return null;
+
   const activities = ["PLP", "Construction", "Hotline"];
   const zones = ["A", "B", "C"];
 
@@ -49,6 +52,7 @@ export default function Rang1Table({ data }: Rang1TableProps) {
                 {activity}
               </td>
               {zones.map((zone) => {
+                // Sécurité : Optionnal Chaining (?.) pour éviter le crash
                 const stats = data[activity]?.[zone] || { num: 0, denum: 0, resultat: 0 };
                 return (
                   <React.Fragment key={`${activity}-${zone}`}>
