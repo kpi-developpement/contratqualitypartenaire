@@ -29,3 +29,5 @@ const uploadGeneric = async (endpoint: string, file: File, period: string): Prom
 export const uploadRangFile = (file: File, period: string) => uploadGeneric("rang", file, period);
 export const uploadSatcliFile = (file: File, period: string) => uploadGeneric("satcli", file, period);
 export const uploadPlainteFile = (file: File, period: string) => uploadGeneric("plainte", file, period);
+export const uploadPtoFile = (file: File, period: string) => uploadGeneric("pto", file, period);
+export const uploadCadrageFile = (file: File, period: string) => uploadGeneric("cadrage", file, period);

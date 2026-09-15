@@ -7,8 +7,8 @@ import FadeIn from "@/components/animations/FadeIn";
 import SlideUp from "@/components/animations/SlideUp";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { ReportResponse } from "@/types";
-import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown } from "lucide-react";
-import { fetchReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile } from "@/services/api";
+import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown, Network, Crop } from "lucide-react";
+import { fetchReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile, uploadPtoFile, uploadCadrageFile } from "@/services/api";
 
 export default function Home() {
   const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
@@ -26,13 +26,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen relative font-sans selection:bg-blue-200">
-      
-      {/* Background interactif Luxe */}
       <InteractiveBackground />
 
       <div className="max-w-7xl mx-auto space-y-12 relative z-10 p-6 md:p-12">
-        
-        {/* Header Section */}
         <FadeIn delay={0.1} className="flex flex-col items-center justify-center space-y-6 pt-4">
           <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm border border-slate-200/80">
             <BarChart3 className="text-blue-600" size={28} />
@@ -41,7 +37,6 @@ export default function Home() {
             ContratQuality <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Partenaire</span>
           </h1>
 
-          {/* Month Picker Luxe */}
           <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm border border-slate-200/80">
             <span className="font-bold text-slate-500 text-sm uppercase tracking-wide">Période :</span>
             <input 
@@ -63,8 +58,8 @@ export default function Home() {
           </FadeIn>
         )}
 
-        {/* Uploads Grid */}
-        <SlideUp delay={0.2} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Uploads Grid - M9ada l 5 boxes */}
+        <SlideUp delay={0.2} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <FileUpload 
             title="Import RANG & TNH"
             description="Fichier source (PLP, Constru, Hotline)"
@@ -83,15 +78,30 @@ export default function Home() {
           />
           <FileUpload 
             title="Import Taux Plainte"
-            description="Volume ticket qualité (Nécessite TNH)"
+            description="Volume ticket qualité"
             icon={<Frown size={36} className="text-rose-500" strokeWidth={1.5} />}
             uploadAction={(file) => uploadPlainteFile(file, period)}
             onUploadSuccess={handleSuccess}
             onUploadError={setError}
           />
+          <FileUpload 
+            title="Import PTO"
+            description="Incohérence PTO"
+            icon={<Network size={36} className="text-pink-500" strokeWidth={1.5} />}
+            uploadAction={(file) => uploadPtoFile(file, period)}
+            onUploadSuccess={handleSuccess}
+            onUploadError={setError}
+          />
+          <FileUpload 
+            title="Import Cadrage"
+            description="Analyse des MAL_CADREE"
+            icon={<Crop size={36} className="text-indigo-500" strokeWidth={1.5} />}
+            uploadAction={(file) => uploadCadrageFile(file, period)}
+            onUploadSuccess={handleSuccess}
+            onUploadError={setError}
+          />
         </SlideUp>
 
-        {/* Dashboard Unified Section */}
         {reportData && (
           <SlideUp delay={0.1} className="pt-8">
             <IndicatorsTable 
@@ -101,6 +111,8 @@ export default function Home() {
               satcliOk={reportData.satcli_ok || reportData.satcliOk} 
               satcliNok={reportData.satcli_nok || reportData.satcliNok} 
               tauxPlainte={reportData.taux_plainte || reportData.tauxPlainte}
+              incoherencePto={reportData.incoherence_pto || reportData.incoherencePto}
+              cadrage={reportData.cadrage}
             />
           </SlideUp>
         )}

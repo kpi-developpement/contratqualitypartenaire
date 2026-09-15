@@ -43,6 +43,10 @@ public class ExcelProcessingService {
     // Constantes TAUX DE PLAINTE
     private static final String COL_VOL_TICKET = "Volume ticket qualité";
 
+    // Constantes PTO / CADRAGE
+    private static final String COL_PTO_MAGOUILLE = "PTO magouille";
+    private static final String COL_MAL_CADREE = "MAL_CADREE";
+
     public MonthlyReport getReportByPeriod(String period) {
         return repository.findById(period).orElse(new MonthlyReport(period));
     }
@@ -59,7 +63,6 @@ public class ExcelProcessingService {
         report.initDefaults(); // Reset existing rang data if re-uploading
 
         processGenericFile(file, record -> {
-            // L'FIX: drna toLowerCase() bach y-matchi m3a l'Map
             String zoneStatutRaw = record.get(COL_ZONE_STATUT.toLowerCase());
             String rangRdvRaw = record.get(COL_RANG_RDV.toLowerCase());
             String statutCrRaw = record.get(COL_STATUT_CR.toLowerCase());
@@ -81,7 +84,6 @@ public class ExcelProcessingService {
         report.setSatcliNok(new IndicatorResult(0, 0, 0.0));
 
         processGenericFile(file, record -> {
-            // L'FIX: toLowerCase()
             String statutCrRaw = record.get(COL_STATUT_CR.toLowerCase());
             String valrNotGlblRaw = record.get(COL_VALR_NOT_GLBL.toLowerCase());
 
@@ -105,7 +107,6 @@ public class ExcelProcessingService {
         report.setTauxPlainte(new IndicatorResult(0, report.getTnh().getDenum(), 0.0));
 
         processGenericFile(file, record -> {
-            // L'FIX: toLowerCase()
             String volTicketRaw = record.get(COL_VOL_TICKET.toLowerCase());
             int volume = 0;
             try {
@@ -121,12 +122,60 @@ public class ExcelProcessingService {
         return repository.save(report);
     }
 
+    // ==========================================
+    // PROCESS INCOHERENCE PTO
+    // ==========================================
+    public MonthlyReport processPtoFile(MultipartFile file, String period) throws Exception {
+        MonthlyReport report = getOrCreateReport(period);
+        report.setIncoherencePto(new IndicatorResult(0, 0, 0.0));
+
+        processGenericFile(file, record -> {
+            String valRaw = record.get(COL_PTO_MAGOUILLE.toLowerCase());
+            if (valRaw != null) {
+                String val = valRaw.trim();
+                // nchofou 1 w 1.0 (7it l'getCellValueAsString msecrisé b return "1" w "0")
+                if ("1".equals(val) || "1.0".equals(val)) {
+                    report.getIncoherencePto().setDenum(report.getIncoherencePto().getDenum() + 1);
+                    report.getIncoherencePto().setNum(report.getIncoherencePto().getNum() + 1);
+                } else if ("0".equals(val) || "0.0".equals(val)) {
+                    report.getIncoherencePto().setDenum(report.getIncoherencePto().getDenum() + 1);
+                }
+            }
+        });
+
+        calculateFinalResults(report);
+        return repository.save(report);
+    }
 
     // ==========================================
-    // HELPERS EXTRACTION LOGIC (L'Moteur d'origine)
+    // PROCESS CADRAGE
+    // ==========================================
+    public MonthlyReport processCadrageFile(MultipartFile file, String period) throws Exception {
+        MonthlyReport report = getOrCreateReport(period);
+        report.setCadrage(new IndicatorResult(0, 0, 0.0));
+
+        processGenericFile(file, record -> {
+            String valRaw = record.get(COL_MAL_CADREE.toLowerCase());
+            if (valRaw != null) {
+                String val = valRaw.trim();
+                if ("1".equals(val) || "1.0".equals(val)) {
+                    report.getCadrage().setDenum(report.getCadrage().getDenum() + 1);
+                    report.getCadrage().setNum(report.getCadrage().getNum() + 1);
+                } else if ("0".equals(val) || "0.0".equals(val)) {
+                    report.getCadrage().setDenum(report.getCadrage().getDenum() + 1);
+                }
+            }
+        });
+
+        calculateFinalResults(report);
+        return repository.save(report);
+    }
+
+
+    // ==========================================
+    // HELPERS EXTRACTION LOGIC
     // ==========================================
     private void extractAndComputeRowRang(String zoneStatutRaw, String rangRdvRaw, String statutCrRaw, String motfKoRaw, MonthlyReport report) {
-        // TNH
         String motfKo = motfKoRaw != null ? motfKoRaw.trim() : "";
         report.getTnh().setDenum(report.getTnh().getDenum() + 1);
 
@@ -134,7 +183,6 @@ public class ExcelProcessingService {
             report.getTnh().setNum(report.getTnh().getNum() + 1);
         }
 
-        // Si la Zone est vide, on s'arrête ici pour les rangs (mais le TNH est déjà compté)
         if (zoneStatutRaw == null || zoneStatutRaw.trim().isEmpty()) return;
 
         String rangRdv = rangRdvRaw != null ? rangRdvRaw.trim() : "";
@@ -171,7 +219,6 @@ public class ExcelProcessingService {
         String statutCr = statutCrRaw != null ? statutCrRaw.trim() : "";
         String valrNotGlbl = valrNotGlblRaw != null ? valrNotGlblRaw.trim() : "";
 
-        // SATCLI OK
         if (VAL_CR_OK.equalsIgnoreCase(statutCr)) {
             report.getSatcliOk().setDenum(report.getSatcliOk().getDenum() + 1);
             if ("5".equals(valrNotGlbl) || "5.0".equals(valrNotGlbl)) {
@@ -179,7 +226,6 @@ public class ExcelProcessingService {
             }
         }
 
-        // SATCLI NOK
         if (VAL_CR_NOK.equalsIgnoreCase(statutCr) || VAL_CR_DELAI.equalsIgnoreCase(statutCr)) {
             report.getSatcliNok().setDenum(report.getSatcliNok().getDenum() + 1);
             if ("4".equals(valrNotGlbl) || "4.0".equals(valrNotGlbl) || "5".equals(valrNotGlbl) || "5.0".equals(valrNotGlbl)) {
@@ -200,6 +246,8 @@ public class ExcelProcessingService {
         if (report.getSatcliOk() != null) report.getSatcliOk().calculateResult();
         if (report.getSatcliNok() != null) report.getSatcliNok().calculateResult();
         if (report.getTauxPlainte() != null) report.getTauxPlainte().calculateResult();
+        if (report.getIncoherencePto() != null) report.getIncoherencePto().calculateResult();
+        if (report.getCadrage() != null) report.getCadrage().calculateResult();
     }
 
     private String extractZoneLetter(String zoneRaw) {
@@ -239,7 +287,6 @@ public class ExcelProcessingService {
             Map<String, Integer> headerMap = csvParser.getHeaderMap();
             if (headerMap == null || headerMap.size() <= 1 && delimiter == ';') return false;
 
-            // Convertir tous les en-têtes en Minuscules pour matcher les constantes
             Map<String, Integer> cleanHeaderMap = new HashMap<>();
             for (Map.Entry<String, Integer> entry : headerMap.entrySet()) {
                 cleanHeaderMap.put(cleanHeaderName(entry.getKey()), entry.getValue());
@@ -264,7 +311,6 @@ public class ExcelProcessingService {
             Row headerRow = sheet.getRow(0);
             if (headerRow == null) throw new RuntimeException("Fichier vide.");
 
-            // Convertir tous les en-têtes en Minuscules
             Map<String, Integer> colIndices = new HashMap<>();
             for (Cell cell : headerRow) {
                 String headerName = cleanHeaderName(getCellValueAsString(cell));
@@ -288,6 +334,8 @@ public class ExcelProcessingService {
         return header == null ? "" : header.replace("\uFEFF", "").replace("\"", "").trim().toLowerCase();
     }
 
+    // L'FIX: Hna kanforcerw ay boolean aw nombre yrje3 kima hoa mn derto
+    // bach 1 w 0 f excel maywliwch true w false
     private String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
         switch (cell.getCellType()) {
@@ -296,7 +344,8 @@ public class ExcelProcessingService {
                 double val = cell.getNumericCellValue();
                 if (val == Math.floor(val)) return String.valueOf((long) val);
                 return String.valueOf(val);
-            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+            case BOOLEAN:
+                return cell.getBooleanCellValue() ? "1" : "0";
             default: return "";
         }
     }

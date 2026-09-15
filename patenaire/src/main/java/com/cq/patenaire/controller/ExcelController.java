@@ -45,6 +45,16 @@ public class ExcelController {
         return handleUpload(file, period, "PLAINTE");
     }
 
+    @PostMapping("/upload/pto")
+    public ResponseEntity<?> uploadPtoFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
+        return handleUpload(file, period, "PTO");
+    }
+
+    @PostMapping("/upload/cadrage")
+    public ResponseEntity<?> uploadCadrageFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
+        return handleUpload(file, period, "CADRAGE");
+    }
+
     private ResponseEntity<?> handleUpload(MultipartFile file, String period, String type) {
         if (file.isEmpty() || period == null || period.trim().isEmpty()) {
             Map<String, String> err = new HashMap<>();
@@ -58,8 +68,12 @@ public class ExcelController {
                 result = excelProcessingService.processRangFile(file, period);
             } else if ("SATCLI".equals(type)) {
                 result = excelProcessingService.processSatcliFile(file, period);
-            } else {
+            } else if ("PLAINTE".equals(type)) {
                 result = excelProcessingService.processPlainteFile(file, period);
+            } else if ("PTO".equals(type)) {
+                result = excelProcessingService.processPtoFile(file, period);
+            } else {
+                result = excelProcessingService.processCadrageFile(file, period);
             }
             return ResponseEntity.ok(result);
         } catch (Exception e) {

@@ -41,6 +41,14 @@ public class MonthlyReport {
     @Column(columnDefinition = "jsonb")
     private IndicatorResult tauxPlainte;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult incoherencePto;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult cadrage;
+
     public MonthlyReport() {
     }
 
@@ -69,5 +77,7 @@ public class MonthlyReport {
         this.satcliOk = new IndicatorResult(0, 0, 0.0);
         this.satcliNok = new IndicatorResult(0, 0, 0.0);
         this.tauxPlainte = new IndicatorResult(0, 0, 0.0);
+        this.incoherencePto = new IndicatorResult(0, 0, 0.0);
+        this.cadrage = new IndicatorResult(0, 0, 0.0);
     }
 }

@@ -4,7 +4,6 @@ export interface IndicatorResult {
   resultat: number;
 }
 
-// Typage db correspond m3a l'entité MonthlyReport f Spring Boot
 export interface ReportResponse {
   period?: string;
   
@@ -14,6 +13,8 @@ export interface ReportResponse {
   satcli_ok?: IndicatorResult;
   satcli_nok?: IndicatorResult;
   taux_plainte?: IndicatorResult;
+  incoherence_pto?: IndicatorResult;
+  cadrage?: IndicatorResult;
   
   // Mapping CamelCase p/r Spring Boot
   perfRang1?: Record<string, Record<string, IndicatorResult>>;
@@ -21,4 +22,5 @@ export interface ReportResponse {
   satcliOk?: IndicatorResult;
   satcliNok?: IndicatorResult;
   tauxPlainte?: IndicatorResult;
+  incoherencePto?: IndicatorResult;
 }

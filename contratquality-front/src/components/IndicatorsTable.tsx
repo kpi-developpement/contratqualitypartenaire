@@ -2,7 +2,7 @@
 
 import React from "react";
 import { IndicatorResult } from "@/types";
-import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning } from "lucide-react";
+import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface IndicatorsTableProps {
@@ -12,10 +12,12 @@ interface IndicatorsTableProps {
   satcliOk?: IndicatorResult;
   satcliNok?: IndicatorResult;
   tauxPlainte?: IndicatorResult;
+  incoherencePto?: IndicatorResult;
+  cadrage?: IndicatorResult;
 }
 
-export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok, tauxPlainte }: IndicatorsTableProps) {
-  const hasData = rang1 || rang2 || tnh || satcliOk || satcliNok || tauxPlainte;
+export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok, tauxPlainte, incoherencePto, cadrage }: IndicatorsTableProps) {
+  const hasData = rang1 || rang2 || tnh || satcliOk || satcliNok || tauxPlainte || incoherencePto || cadrage;
   
   if (!hasData) return null;
 
@@ -24,7 +26,6 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
 
   const formatPercent = (value: number) => (value * 100).toFixed(2) + "%";
 
-  // Badges kima f taswira: bg bida, border mlowen w texte mlowen
   const getScoreStyles = (value: number) => {
     if (value >= 0.8) return { bar: "bg-emerald-400", text: "text-emerald-600", badge: "bg-white border-emerald-300 shadow-sm", dot: "bg-emerald-500" };
     if (value >= 0.5) return { bar: "bg-amber-400", text: "text-amber-600", badge: "bg-white border-amber-300 shadow-sm", dot: "bg-amber-500" };
@@ -35,6 +36,8 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
   const getSatOkStyles = () => ({ bar: "bg-teal-400", text: "text-teal-600", badge: "bg-white border-teal-300 shadow-sm", dot: "bg-teal-500" });
   const getSatNokStyles = () => ({ bar: "bg-orange-400", text: "text-orange-600", badge: "bg-white border-orange-300 shadow-sm", dot: "bg-orange-500" });
   const getPlainteStyles = () => ({ bar: "bg-rose-500", text: "text-rose-700", badge: "bg-white border-rose-300 shadow-sm", dot: "bg-rose-600" });
+  const getPtoStyles = () => ({ bar: "bg-pink-400", text: "text-pink-600", badge: "bg-white border-pink-300 shadow-sm", dot: "bg-pink-500" });
+  const getCadrageStyles = () => ({ bar: "bg-indigo-400", text: "text-indigo-600", badge: "bg-white border-indigo-300 shadow-sm", dot: "bg-indigo-500" });
 
   const renderIndicatorRow = (
     title: string, icon: React.ReactNode, label: string, letter: string, stats: IndicatorResult, styles: any
@@ -44,7 +47,7 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
 
     return (
       <tr className="bg-white hover:bg-slate-50/50 transition-colors">
-        <td className="py-6 px-4 align-middle border-r border-b border-slate-100 bg-slate-100/30">
+        <td className="py-6 px-4 align-middle border-r border-b border-slate-100 bg-[#f4f6f9]">
           <div className="flex flex-col items-center justify-center gap-4 py-8 px-4 rounded-xl bg-slate-800 shadow-md">
             {icon}
             <span className="font-bold text-sm text-white tracking-[0.2em] rotate-180 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
@@ -82,7 +85,6 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
   return (
     <div className="w-full bg-white rounded-[1.5rem] shadow-[0_10px_40px_rgb(0,0,0,0.06)] border border-slate-200 overflow-hidden">
       
-      {/* Header Luxe */}
       <div className="px-8 py-6 border-b border-slate-200 bg-white flex items-center gap-4">
         <div className="p-3 bg-slate-900 rounded-2xl text-white shadow-md">
           <Activity size={24} strokeWidth={2} />
@@ -96,11 +98,9 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
         </div>
       </div>
       
-      {/* Table Content */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left border-collapse min-w-[900px]">
           <thead>
-            {/* Background grici khfif f l'entete b7al taswira */}
             <tr className="bg-[#cbd5e1]/40 border-b border-slate-200">
               <th className="py-4 px-4 font-bold text-slate-500 tracking-widest text-[11px] uppercase w-20 text-center">Niveau</th>
               <th className="py-4 px-8 font-bold text-slate-500 tracking-widest text-[11px] uppercase w-56">Activité / Catégorie</th>
@@ -216,6 +216,8 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
             {renderIndicatorRow("SAT OK", <Star size={18} className="text-teal-300" />, "Satisfaction Validée", "S", satcliOk as IndicatorResult, getSatOkStyles())}
             {renderIndicatorRow("SAT NOK", <Frown size={18} className="text-orange-300" />, "Insatisfaction Signalée", "N", satcliNok as IndicatorResult, getSatNokStyles())}
             {renderIndicatorRow("PLAINTE", <MessageSquareWarning size={18} className="text-rose-300" />, "Taux de Plainte", "P", tauxPlainte as IndicatorResult, getPlainteStyles())}
+            {renderIndicatorRow("PTO", <Network size={18} className="text-pink-300" />, "Incohérence PTO", "I", incoherencePto as IndicatorResult, getPtoStyles())}
+            {renderIndicatorRow("CADRAGE", <Crop size={18} className="text-indigo-300" />, "Analyse MAL_CADREE", "C", cadrage as IndicatorResult, getCadrageStyles())}
 
           </tbody>
         </table>
