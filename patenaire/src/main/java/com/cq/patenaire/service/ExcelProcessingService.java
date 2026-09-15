@@ -43,7 +43,6 @@ public class ExcelProcessingService {
     // Constantes TAUX DE PLAINTE
     private static final String COL_VOL_TICKET = "Volume ticket qualité";
 
-
     public MonthlyReport getReportByPeriod(String period) {
         return repository.findById(period).orElse(new MonthlyReport(period));
     }
@@ -60,10 +59,11 @@ public class ExcelProcessingService {
         report.initDefaults(); // Reset existing rang data if re-uploading
 
         processGenericFile(file, record -> {
-            String zoneStatutRaw = record.get(COL_ZONE_STATUT);
-            String rangRdvRaw = record.get(COL_RANG_RDV);
-            String statutCrRaw = record.get(COL_STATUT_CR);
-            String motfKoRaw = record.get(COL_MOTF_KO);
+            // L'FIX: drna toLowerCase() bach y-matchi m3a l'Map
+            String zoneStatutRaw = record.get(COL_ZONE_STATUT.toLowerCase());
+            String rangRdvRaw = record.get(COL_RANG_RDV.toLowerCase());
+            String statutCrRaw = record.get(COL_STATUT_CR.toLowerCase());
+            String motfKoRaw = record.get(COL_MOTF_KO.toLowerCase());
 
             extractAndComputeRowRang(zoneStatutRaw, rangRdvRaw, statutCrRaw, motfKoRaw, report);
         });
@@ -81,8 +81,10 @@ public class ExcelProcessingService {
         report.setSatcliNok(new IndicatorResult(0, 0, 0.0));
 
         processGenericFile(file, record -> {
-            String statutCrRaw = record.get(COL_STATUT_CR);
-            String valrNotGlblRaw = record.get(COL_VALR_NOT_GLBL);
+            // L'FIX: toLowerCase()
+            String statutCrRaw = record.get(COL_STATUT_CR.toLowerCase());
+            String valrNotGlblRaw = record.get(COL_VALR_NOT_GLBL.toLowerCase());
+
             extractAndComputeRowSatcli(statutCrRaw, valrNotGlblRaw, report);
         });
 
@@ -103,7 +105,8 @@ public class ExcelProcessingService {
         report.setTauxPlainte(new IndicatorResult(0, report.getTnh().getDenum(), 0.0));
 
         processGenericFile(file, record -> {
-            String volTicketRaw = record.get(COL_VOL_TICKET);
+            // L'FIX: toLowerCase()
+            String volTicketRaw = record.get(COL_VOL_TICKET.toLowerCase());
             int volume = 0;
             try {
                 if (volTicketRaw != null && !volTicketRaw.trim().isEmpty()) {
@@ -120,9 +123,10 @@ public class ExcelProcessingService {
 
 
     // ==========================================
-    // HELPERS EXTRACTION LOGIC
+    // HELPERS EXTRACTION LOGIC (L'Moteur d'origine)
     // ==========================================
     private void extractAndComputeRowRang(String zoneStatutRaw, String rangRdvRaw, String statutCrRaw, String motfKoRaw, MonthlyReport report) {
+        // TNH
         String motfKo = motfKoRaw != null ? motfKoRaw.trim() : "";
         report.getTnh().setDenum(report.getTnh().getDenum() + 1);
 
@@ -130,6 +134,7 @@ public class ExcelProcessingService {
             report.getTnh().setNum(report.getTnh().getNum() + 1);
         }
 
+        // Si la Zone est vide, on s'arrête ici pour les rangs (mais le TNH est déjà compté)
         if (zoneStatutRaw == null || zoneStatutRaw.trim().isEmpty()) return;
 
         String rangRdv = rangRdvRaw != null ? rangRdvRaw.trim() : "";
@@ -166,6 +171,7 @@ public class ExcelProcessingService {
         String statutCr = statutCrRaw != null ? statutCrRaw.trim() : "";
         String valrNotGlbl = valrNotGlblRaw != null ? valrNotGlblRaw.trim() : "";
 
+        // SATCLI OK
         if (VAL_CR_OK.equalsIgnoreCase(statutCr)) {
             report.getSatcliOk().setDenum(report.getSatcliOk().getDenum() + 1);
             if ("5".equals(valrNotGlbl) || "5.0".equals(valrNotGlbl)) {
@@ -173,6 +179,7 @@ public class ExcelProcessingService {
             }
         }
 
+        // SATCLI NOK
         if (VAL_CR_NOK.equalsIgnoreCase(statutCr) || VAL_CR_DELAI.equalsIgnoreCase(statutCr)) {
             report.getSatcliNok().setDenum(report.getSatcliNok().getDenum() + 1);
             if ("4".equals(valrNotGlbl) || "4.0".equals(valrNotGlbl) || "5".equals(valrNotGlbl) || "5.0".equals(valrNotGlbl)) {
@@ -232,6 +239,7 @@ public class ExcelProcessingService {
             Map<String, Integer> headerMap = csvParser.getHeaderMap();
             if (headerMap == null || headerMap.size() <= 1 && delimiter == ';') return false;
 
+            // Convertir tous les en-têtes en Minuscules pour matcher les constantes
             Map<String, Integer> cleanHeaderMap = new HashMap<>();
             for (Map.Entry<String, Integer> entry : headerMap.entrySet()) {
                 cleanHeaderMap.put(cleanHeaderName(entry.getKey()), entry.getValue());
@@ -256,6 +264,7 @@ public class ExcelProcessingService {
             Row headerRow = sheet.getRow(0);
             if (headerRow == null) throw new RuntimeException("Fichier vide.");
 
+            // Convertir tous les en-têtes en Minuscules
             Map<String, Integer> colIndices = new HashMap<>();
             for (Cell cell : headerRow) {
                 String headerName = cleanHeaderName(getCellValueAsString(cell));
