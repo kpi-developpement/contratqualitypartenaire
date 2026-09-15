@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import FileUpload from "@/components/FileUpload";
-import Rang1Table from "@/components/Rang1Table";
+import IndicatorsTable from "@/components/IndicatorsTable";
 import FadeIn from "@/components/animations/FadeIn";
 import SlideUp from "@/components/animations/SlideUp";
 import { ReportResponse } from "@/types";
@@ -13,8 +13,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // L'FIX HNA: Spring Boot b l'SNAKE_CASE kay-sifet "perf_rang1" machi "perf_rang_1"
+  // Fallbacks de nommage pour Spring Boot (CamelCase vs SnakeCase)
   const rang1Data = reportData ? (reportData.perf_rang1 || reportData.perf_rang_1 || reportData.perfRang1) : undefined;
+  const rang2Data = reportData ? (reportData.perf_rang2 || reportData.perf_rang_2 || reportData.perfRang2) : undefined;
+  const tnhData = reportData ? reportData.tnh : undefined;
 
   return (
     <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-slate-100 to-slate-200 p-6 md:p-12 font-sans selection:bg-blue-200">
@@ -55,21 +57,10 @@ export default function Home() {
           )}
         </SlideUp>
 
-        {/* Results Section */}
-        {reportData && rang1Data && (
+        {/* Dashboard Unified Section */}
+        {reportData && (rang1Data || rang2Data || tnhData) && (
           <SlideUp delay={0.1} className="pt-8">
-            <Rang1Table data={rang1Data} />
-          </SlideUp>
-        )}
-
-        {/* DEBUG MODE - Ayban ghir ila l'backend sifet data b chi format wakhur */}
-        {reportData && !rang1Data && (
-          <SlideUp delay={0.1} className="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-2xl shadow-sm overflow-auto">
-            <div className="flex items-center gap-2 mb-4">
-              <AlertCircle className="text-amber-600" size={20} />
-              <p className="font-bold text-amber-800">Mode Debug : Données reçues mais format inattendu</p>
-            </div>
-            <pre className="text-xs text-amber-700 bg-amber-100/50 p-4 rounded-xl">{JSON.stringify(reportData, null, 2)}</pre>
+            <IndicatorsTable rang1={rang1Data} rang2={rang2Data} tnh={tnhData} />
           </SlideUp>
         )}
 

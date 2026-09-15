@@ -13,6 +13,9 @@ public class ReportResponse {
     // PERF RANG 2: Zone (A, B, C) -> Resultat
     private Map<String, IndicatorResult> perfRang2 = new HashMap<>();
 
+    // NOUVEAU: TNH (Taux de Non Honoré) - Indicateur Global
+    private IndicatorResult tnh = new IndicatorResult(0, 0, 0.0);
+
     public ReportResponse() {
         // Initialisation des structures pour éviter les NullPointerExceptions
         String[] activities = {"PLP", "Construction", "Hotline"};

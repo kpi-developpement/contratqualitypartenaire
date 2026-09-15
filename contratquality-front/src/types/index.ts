@@ -5,11 +5,11 @@ export interface IndicatorResult {
 }
 
 export interface ReportResponse {
-  // Support pour Snake Case
+  // Support pour le mapping par défaut et Snake Case (Spring Boot)
   perf_rang_1?: Record<string, Record<string, IndicatorResult>>;
   perf_rang_2?: Record<string, IndicatorResult>;
+  tnh?: IndicatorResult;
   
-  // Support pour Camel Case (Spring Boot par défaut)
   perfRang1?: Record<string, Record<string, IndicatorResult>>;
   perfRang2?: Record<string, IndicatorResult>;
 }
