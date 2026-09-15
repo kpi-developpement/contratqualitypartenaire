@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Calculator, Settings2, Loader2, PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateBonus } from "@/services/api";
+import { IndicatorResult } from "@/types";
 
 interface BonusSimulationProps {
   period: string;
   hasData: boolean;
+  rang1?: Record<string, Record<string, IndicatorResult>>;
+  rang2?: Record<string, IndicatorResult>;
 }
 
-export default function BonusSimulation({ period, hasData }: BonusSimulationProps) {
+export default function BonusSimulation({ period, hasData, rang1, rang2 }: BonusSimulationProps) {
   const [globalConfig, setGlobalConfig] = useState({ bonusMin: "-2", bonusMax: "3", g29: "1" });
   const [targets, setTargets] = useState<Record<string, { min: string; max: string }>>({
     "PLP-A": { min: "94", max: "99" }, "PLP-B": { min: "92", max: "98" }, "PLP-C": { min: "91", max: "98" },
@@ -22,11 +25,28 @@ export default function BonusSimulation({ period, hasData }: BonusSimulationProp
   const [results, setResults] = useState<Record<string, any>>({});
   const [isCalculating, setIsCalculating] = useState(false);
 
+  const totalDenumR1 = useMemo(() => {
+    let sum = 0;
+    if (rang1) {
+      ["PLP", "Construction", "Hotline"].forEach(act => {
+        ["A", "B", "C"].forEach(z => sum += (rang1[act]?.[z]?.denum || 0));
+      });
+    }
+    return sum;
+  }, [rang1]);
+
+  const totalDenumR2 = useMemo(() => {
+    let sum = 0;
+    if (rang2) {
+      ["A", "B", "C"].forEach(z => sum += (rang2[z]?.denum || 0));
+    }
+    return sum;
+  }, [rang2]);
+
   const handleTargetChange = (id: string, field: 'min' | 'max', value: string) => {
     setTargets(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
 
-  // Appel API automatique (Debounced) à chaque changement de config
   useEffect(() => {
     if (!hasData) return;
     
@@ -51,7 +71,7 @@ export default function BonusSimulation({ period, hasData }: BonusSimulationProp
       } finally {
         setIsCalculating(false);
       }
-    }, 600); // 600ms debounce bach may-bombardich l'backend
+    }, 600);
 
     return () => clearTimeout(handler);
   }, [globalConfig, targets, period, hasData]);
@@ -69,8 +89,6 @@ export default function BonusSimulation({ period, hasData }: BonusSimulationProp
 
   return (
     <div className="w-full bg-white rounded-[1.5rem] shadow-[0_10px_40px_rgb(0,0,0,0.06)] border border-slate-200 overflow-hidden mt-12 relative">
-      
-      {/* Header Luxe */}
       <div className="px-8 py-6 border-b border-slate-200 bg-white flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-purple-50 rounded-2xl text-purple-600 shadow-sm border border-purple-100 relative">
@@ -98,7 +116,6 @@ export default function BonusSimulation({ period, hasData }: BonusSimulationProp
         </div>
       </div>
 
-      {/* Table Content */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left border-collapse min-w-[1000px]">
           <thead>
@@ -119,34 +136,31 @@ export default function BonusSimulation({ period, hasData }: BonusSimulationProp
               const res = results[row.id];
               const resultat = res?.resultat || 0;
               const pdm = res?.pdm || 0;
-              const bonus = res?.bonusCalcule || 0;
+              
+              // Fallback l'i7tiyat 7it JSON kay9der ybeddel la casse
+              const bonus = res?.bonusCalcule ?? res?.bonus_calcule ?? 0;
 
               return (
                 <tr key={row.id} className="hover:bg-slate-50/60 transition-colors border-b border-slate-100 last:border-0 group">
                   
-                  {/* Catégorie */}
                   {index % 3 === 0 && (
                     <td rowSpan={3} className="py-4 px-6 align-middle border-r border-slate-100 bg-sky-50/30">
                       <span className="font-extrabold text-slate-700 text-[13px]">{row.cat}</span>
                     </td>
                   )}
 
-                  {/* Zone */}
                   <td className="py-3 px-4 text-center border-r border-slate-100 bg-white">
                     <span className="font-bold text-slate-500 text-xs">{row.zone}</span>
                   </td>
 
-                  {/* Résultat (Backend) */}
                   <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
                     <span className="font-black text-slate-800 text-[15px]">{formatPercent(resultat)}</span>
                   </td>
 
-                  {/* PDM (Backend) */}
                   <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/20">
                     <span className="font-bold text-blue-600 text-sm">{formatPercent(pdm)}</span>
                   </td>
 
-                  {/* Point Min (Input) */}
                   <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
                     <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-400 transition-all shadow-sm">
                       <input 
@@ -159,7 +173,6 @@ export default function BonusSimulation({ period, hasData }: BonusSimulationProp
                     </div>
                   </td>
 
-                  {/* Point Max (Input) */}
                   <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
                     <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-400 transition-all shadow-sm">
                       <input 
@@ -172,7 +185,6 @@ export default function BonusSimulation({ period, hasData }: BonusSimulationProp
                     </div>
                   </td>
 
-                  {/* Bonus Min (Global) */}
                   {index === 0 && (
                     <td rowSpan={12} className="py-3 px-6 align-middle border-r border-slate-100 bg-slate-50/50">
                       <div className="flex items-center justify-center">
@@ -189,7 +201,6 @@ export default function BonusSimulation({ period, hasData }: BonusSimulationProp
                     </td>
                   )}
 
-                  {/* Bonus Max (Global) */}
                   {index === 0 && (
                     <td rowSpan={12} className="py-3 px-6 align-middle border-r border-slate-100 bg-slate-50/50">
                       <div className="flex items-center justify-center">
@@ -206,7 +217,6 @@ export default function BonusSimulation({ period, hasData }: BonusSimulationProp
                     </td>
                   )}
 
-                  {/* Bonus Indicateur Final (Backend) */}
                   <td className="py-3 px-6 text-center bg-emerald-50/20 group-hover:bg-emerald-50/40 transition-colors">
                     <div className={cn(
                       "inline-flex items-center justify-center px-4 py-1.5 rounded-lg font-black text-[15px] border shadow-sm w-28",
