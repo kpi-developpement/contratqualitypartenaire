@@ -49,6 +49,10 @@ public class MonthlyReport {
     @Column(columnDefinition = "jsonb")
     private IndicatorResult cadrage;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult gemNok;
+
     public MonthlyReport() {
     }
 
@@ -79,5 +83,6 @@ public class MonthlyReport {
         this.tauxPlainte = new IndicatorResult(0, 0, 0.0);
         this.incoherencePto = new IndicatorResult(0, 0, 0.0);
         this.cadrage = new IndicatorResult(0, 0, 0.0);
+        this.gemNok = new IndicatorResult(0, 0, 0.0);
     }
 }

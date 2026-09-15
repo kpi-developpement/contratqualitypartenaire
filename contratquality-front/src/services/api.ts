@@ -31,3 +31,4 @@ export const uploadSatcliFile = (file: File, period: string) => uploadGeneric("s
 export const uploadPlainteFile = (file: File, period: string) => uploadGeneric("plainte", file, period);
 export const uploadPtoFile = (file: File, period: string) => uploadGeneric("pto", file, period);
 export const uploadCadrageFile = (file: File, period: string) => uploadGeneric("cadrage", file, period);
+export const uploadGemNokFile = (file: File, period: string) => uploadGeneric("gemnok", file, period);

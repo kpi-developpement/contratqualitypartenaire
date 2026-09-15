@@ -7,8 +7,8 @@ import FadeIn from "@/components/animations/FadeIn";
 import SlideUp from "@/components/animations/SlideUp";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { ReportResponse } from "@/types";
-import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown, Network, Crop } from "lucide-react";
-import { fetchReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile, uploadPtoFile, uploadCadrageFile } from "@/services/api";
+import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown, Network, Crop, Zap } from "lucide-react";
+import { fetchReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile, uploadPtoFile, uploadCadrageFile, uploadGemNokFile } from "@/services/api";
 
 export default function Home() {
   const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
@@ -58,7 +58,7 @@ export default function Home() {
           </FadeIn>
         )}
 
-        {/* Uploads Grid - M9ada l 5 boxes */}
+        {/* Uploads Grid - M9ada parfaitement l 6 boxes */}
         <SlideUp delay={0.2} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <FileUpload 
             title="Import RANG & TNH"
@@ -100,6 +100,14 @@ export default function Home() {
             onUploadSuccess={handleSuccess}
             onUploadError={setError}
           />
+          <FileUpload 
+            title="Import GEM NOK"
+            description="Analyse TVC et Flg Gem"
+            icon={<Zap size={36} className="text-cyan-500" strokeWidth={1.5} />}
+            uploadAction={(file) => uploadGemNokFile(file, period)}
+            onUploadSuccess={handleSuccess}
+            onUploadError={setError}
+          />
         </SlideUp>
 
         {reportData && (
@@ -113,6 +121,7 @@ export default function Home() {
               tauxPlainte={reportData.taux_plainte || reportData.tauxPlainte}
               incoherencePto={reportData.incoherence_pto || reportData.incoherencePto}
               cadrage={reportData.cadrage}
+              gemNok={reportData.gem_nok || reportData.gemNok}
             />
           </SlideUp>
         )}

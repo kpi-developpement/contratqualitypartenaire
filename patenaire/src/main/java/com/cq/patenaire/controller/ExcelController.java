@@ -55,6 +55,11 @@ public class ExcelController {
         return handleUpload(file, period, "CADRAGE");
     }
 
+    @PostMapping("/upload/gemnok")
+    public ResponseEntity<?> uploadGemNokFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
+        return handleUpload(file, period, "GEM_NOK");
+    }
+
     private ResponseEntity<?> handleUpload(MultipartFile file, String period, String type) {
         if (file.isEmpty() || period == null || period.trim().isEmpty()) {
             Map<String, String> err = new HashMap<>();
@@ -72,6 +77,8 @@ public class ExcelController {
                 result = excelProcessingService.processPlainteFile(file, period);
             } else if ("PTO".equals(type)) {
                 result = excelProcessingService.processPtoFile(file, period);
+            } else if ("GEM_NOK".equals(type)) {
+                result = excelProcessingService.processGemNokFile(file, period);
             } else {
                 result = excelProcessingService.processCadrageFile(file, period);
             }

@@ -47,6 +47,10 @@ public class ExcelProcessingService {
     private static final String COL_PTO_MAGOUILLE = "PTO magouille";
     private static final String COL_MAL_CADREE = "MAL_CADREE";
 
+    // Constantes GEM NOK
+    private static final String COL_TVC = "TVC";
+    private static final String COL_FLG_GEM = "Flg Gem";
+
     public MonthlyReport getReportByPeriod(String period) {
         return repository.findById(period).orElse(new MonthlyReport(period));
     }
@@ -133,7 +137,6 @@ public class ExcelProcessingService {
             String valRaw = record.get(COL_PTO_MAGOUILLE.toLowerCase());
             if (valRaw != null) {
                 String val = valRaw.trim();
-                // nchofou 1 w 1.0 (7it l'getCellValueAsString msecrisé b return "1" w "0")
                 if ("1".equals(val) || "1.0".equals(val)) {
                     report.getIncoherencePto().setDenum(report.getIncoherencePto().getDenum() + 1);
                     report.getIncoherencePto().setNum(report.getIncoherencePto().getNum() + 1);
@@ -171,6 +174,43 @@ public class ExcelProcessingService {
         return repository.save(report);
     }
 
+    // ==========================================
+    // PROCESS GEM NOK
+    // ==========================================
+    public MonthlyReport processGemNokFile(MultipartFile file, String period) throws Exception {
+        MonthlyReport report = getOrCreateReport(period);
+        report.setGemNok(new IndicatorResult(0, 0, 0.0));
+
+        processGenericFile(file, record -> {
+            String tvcRaw = record.get(COL_TVC.toLowerCase());
+            String flgGemRaw = record.get(COL_FLG_GEM.toLowerCase());
+
+            // Fallback: Au cas où le fichier utilise "Grp Statut Crinstall Mnt" avec des espaces au lieu des underscores
+            String statutCrRaw = record.get(COL_STATUT_CR.toLowerCase());
+            if (statutCrRaw == null) {
+                statutCrRaw = record.get("grp statut crinstall mnt");
+            }
+
+            if (tvcRaw != null && flgGemRaw != null) {
+                String tvc = tvcRaw.trim();
+                String flgGem = flgGemRaw.trim();
+                String statutCr = statutCrRaw != null ? statutCrRaw.trim() : "";
+
+                // DENUM = TVC "OUI" et Flg Gem "1"
+                if ("OUI".equalsIgnoreCase(tvc) && ("1".equals(flgGem) || "1.0".equals(flgGem))) {
+                    report.getGemNok().setDenum(report.getGemNok().getDenum() + 1);
+
+                    // NUM = DENUM + CR_MNT_OK
+                    if (VAL_CR_OK.equalsIgnoreCase(statutCr)) {
+                        report.getGemNok().setNum(report.getGemNok().getNum() + 1);
+                    }
+                }
+            }
+        });
+
+        calculateFinalResults(report);
+        return repository.save(report);
+    }
 
     // ==========================================
     // HELPERS EXTRACTION LOGIC
@@ -248,6 +288,7 @@ public class ExcelProcessingService {
         if (report.getTauxPlainte() != null) report.getTauxPlainte().calculateResult();
         if (report.getIncoherencePto() != null) report.getIncoherencePto().calculateResult();
         if (report.getCadrage() != null) report.getCadrage().calculateResult();
+        if (report.getGemNok() != null) report.getGemNok().calculateResult();
     }
 
     private String extractZoneLetter(String zoneRaw) {
@@ -334,8 +375,6 @@ public class ExcelProcessingService {
         return header == null ? "" : header.replace("\uFEFF", "").replace("\"", "").trim().toLowerCase();
     }
 
-    // L'FIX: Hna kanforcerw ay boolean aw nombre yrje3 kima hoa mn derto
-    // bach 1 w 0 f excel maywliwch true w false
     private String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
         switch (cell.getCellType()) {

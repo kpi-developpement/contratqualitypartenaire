@@ -15,6 +15,7 @@ export interface ReportResponse {
   taux_plainte?: IndicatorResult;
   incoherence_pto?: IndicatorResult;
   cadrage?: IndicatorResult;
+  gem_nok?: IndicatorResult;
   
   // Mapping CamelCase p/r Spring Boot
   perfRang1?: Record<string, Record<string, IndicatorResult>>;
@@ -23,4 +24,5 @@ export interface ReportResponse {
   satcliNok?: IndicatorResult;
   tauxPlainte?: IndicatorResult;
   incoherencePto?: IndicatorResult;
+  gemNok?: IndicatorResult;
 }

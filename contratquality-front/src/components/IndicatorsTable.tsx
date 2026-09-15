@@ -2,7 +2,7 @@
 
 import React from "react";
 import { IndicatorResult } from "@/types";
-import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop } from "lucide-react";
+import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface IndicatorsTableProps {
@@ -14,10 +14,11 @@ interface IndicatorsTableProps {
   tauxPlainte?: IndicatorResult;
   incoherencePto?: IndicatorResult;
   cadrage?: IndicatorResult;
+  gemNok?: IndicatorResult;
 }
 
-export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok, tauxPlainte, incoherencePto, cadrage }: IndicatorsTableProps) {
-  const hasData = rang1 || rang2 || tnh || satcliOk || satcliNok || tauxPlainte || incoherencePto || cadrage;
+export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok, tauxPlainte, incoherencePto, cadrage, gemNok }: IndicatorsTableProps) {
+  const hasData = rang1 || rang2 || tnh || satcliOk || satcliNok || tauxPlainte || incoherencePto || cadrage || gemNok;
   
   if (!hasData) return null;
 
@@ -38,6 +39,7 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
   const getPlainteStyles = () => ({ bar: "bg-rose-500", text: "text-rose-700", badge: "bg-white border-rose-300 shadow-sm", dot: "bg-rose-600" });
   const getPtoStyles = () => ({ bar: "bg-pink-400", text: "text-pink-600", badge: "bg-white border-pink-300 shadow-sm", dot: "bg-pink-500" });
   const getCadrageStyles = () => ({ bar: "bg-indigo-400", text: "text-indigo-600", badge: "bg-white border-indigo-300 shadow-sm", dot: "bg-indigo-500" });
+  const getGemNokStyles = () => ({ bar: "bg-cyan-400", text: "text-cyan-600", badge: "bg-white border-cyan-300 shadow-sm", dot: "bg-cyan-500" });
 
   const renderIndicatorRow = (
     title: string, icon: React.ReactNode, label: string, letter: string, stats: IndicatorResult, styles: any
@@ -218,6 +220,7 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
             {renderIndicatorRow("PLAINTE", <MessageSquareWarning size={18} className="text-rose-300" />, "Taux de Plainte", "P", tauxPlainte as IndicatorResult, getPlainteStyles())}
             {renderIndicatorRow("PTO", <Network size={18} className="text-pink-300" />, "Incohérence PTO", "I", incoherencePto as IndicatorResult, getPtoStyles())}
             {renderIndicatorRow("CADRAGE", <Crop size={18} className="text-indigo-300" />, "Analyse MAL_CADREE", "C", cadrage as IndicatorResult, getCadrageStyles())}
+            {renderIndicatorRow("GEM NOK", <Zap size={18} className="text-cyan-300" />, "Analyse GEM NOK", "G", gemNok as IndicatorResult, getGemNokStyles())}
 
           </tbody>
         </table>
