@@ -13,7 +13,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const rang1Data = reportData ? (reportData.perf_rang_1 || reportData.perfRang1) : undefined;
+  // L'FIX HNA: Spring Boot b l'SNAKE_CASE kay-sifet "perf_rang1" machi "perf_rang_1"
+  const rang1Data = reportData ? (reportData.perf_rang1 || reportData.perf_rang_1 || reportData.perfRang1) : undefined;
 
   return (
     <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-slate-100 to-slate-200 p-6 md:p-12 font-sans selection:bg-blue-200">
@@ -61,7 +62,7 @@ export default function Home() {
           </SlideUp>
         )}
 
-        {/* DEBUG MODE */}
+        {/* DEBUG MODE - Ayban ghir ila l'backend sifet data b chi format wakhur */}
         {reportData && !rang1Data && (
           <SlideUp delay={0.1} className="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-2xl shadow-sm overflow-auto">
             <div className="flex items-center gap-2 mb-4">
