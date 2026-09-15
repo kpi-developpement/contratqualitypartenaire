@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { IndicatorResult } from "@/types";
-import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop, Zap } from "lucide-react";
+import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop, Zap, PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface IndicatorsTableProps {
@@ -20,12 +20,36 @@ interface IndicatorsTableProps {
 export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok, tauxPlainte, incoherencePto, cadrage, gemNok }: IndicatorsTableProps) {
   const hasData = rang1 || rang2 || tnh || satcliOk || satcliNok || tauxPlainte || incoherencePto || cadrage || gemNok;
   
+  // Calcul dynamique des totaux Denum pour les Parts de Marché (PDM)
+  const totalDenumRang1 = useMemo(() => {
+    let total = 0;
+    if (rang1) {
+      Object.values(rang1).forEach(zones => {
+        Object.values(zones).forEach(stats => {
+          total += stats?.denum || 0;
+        });
+      });
+    }
+    return total;
+  }, [rang1]);
+
+  const totalDenumRang2 = useMemo(() => {
+    let total = 0;
+    if (rang2) {
+      Object.values(rang2).forEach(stats => {
+        total += stats?.denum || 0;
+      });
+    }
+    return total;
+  }, [rang2]);
+
   if (!hasData) return null;
 
   const activities = ["PLP", "Construction", "Hotline"];
   const zones = ["A", "B", "C"];
 
   const formatPercent = (value: number) => (value * 100).toFixed(2) + "%";
+  const formatPdm = (value: number) => (value * 100).toFixed(1) + "%";
 
   const getScoreStyles = (value: number) => {
     if (value >= 0.8) return { bar: "bg-emerald-400", text: "text-emerald-600", badge: "bg-white border-emerald-300 shadow-sm", dot: "bg-emerald-500" };
@@ -69,7 +93,11 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
           <span className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-white text-slate-600 font-bold text-xs border border-slate-200 shadow-sm">Global</span>
         </td>
         <td className="py-5 px-6 text-center border-r border-b border-slate-100 font-black text-slate-700 text-sm">{stats.num}</td>
-        <td className="py-5 px-6 text-center border-r border-b border-slate-100 font-black text-slate-500 text-sm">{stats.denum}</td>
+        <td className="py-5 px-6 text-center border-r border-b border-slate-100 font-black text-slate-500 text-sm">
+          <div className="flex flex-col items-center justify-center">
+            <span>{stats.denum}</span>
+          </div>
+        </td>
         <td className="py-5 px-6 border-b border-slate-100">
           <div className="flex flex-col items-center justify-center gap-2">
             <span className={cn("px-4 py-1.5 rounded-full text-xs font-bold border flex items-center gap-2", styles.badge, styles.text)}>
@@ -111,7 +139,7 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
                 <div className="flex items-center justify-center gap-1"><Hash size={12}/> Num</div>
               </th>
               <th className="py-4 px-6 font-bold text-slate-500 tracking-widest text-[11px] uppercase text-center w-32">
-                <div className="flex items-center justify-center gap-1"><Target size={12}/> Denum</div>
+                <div className="flex items-center justify-center gap-1"><Target size={12}/> Vol (Denum)</div>
               </th>
               <th className="py-4 px-6 font-bold text-slate-500 tracking-widest text-[11px] uppercase text-center">
                 <div className="flex items-center justify-center gap-1"><TrendingUp size={12}/> KPI Final</div>
@@ -128,6 +156,7 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
 
                 const percentValue = stats.resultat * 100;
                 const styles = getScoreStyles(stats.resultat);
+                const pdm = totalDenumRang1 > 0 ? stats.denum / totalDenumRang1 : 0;
                 
                 return (
                   <tr key={`R1-${activity}-${zone}`} className="hover:bg-slate-50/50 transition-colors">
@@ -155,7 +184,18 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center border-r border-b border-slate-100 font-black text-slate-700 text-sm">{stats.num}</td>
-                    <td className="py-4 px-6 text-center border-r border-b border-slate-100 font-black text-slate-500 text-sm">{stats.denum}</td>
+                    <td className="py-4 px-6 text-center border-r border-b border-slate-100 font-black text-slate-500 text-sm">
+                      <div className="flex flex-col items-center justify-center gap-1.5">
+                        <span>{stats.denum}</span>
+                        {/* PDM Badge Luxe */}
+                        {stats.denum > 0 && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50/80 border border-blue-100 px-2 py-0.5 rounded-md">
+                            <PieChart size={10} className="text-blue-500" />
+                            {formatPdm(pdm)} PDM
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-4 px-6 border-b border-slate-100">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <span className={cn("px-4 py-1.5 rounded-full text-xs font-bold border flex items-center gap-2", styles.badge, styles.text)}>
@@ -175,8 +215,10 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
             {rang2 && zones.map((zone, zIndex) => {
               const stats = rang2[zone];
               if (!stats || (stats.num === 0 && stats.denum === 0)) return null;
+              
               const percentValue = stats.resultat * 100;
               const styles = getScoreStyles(stats.resultat);
+              const pdm = totalDenumRang2 > 0 ? stats.denum / totalDenumRang2 : 0;
 
               return (
                 <tr key={`R2-${zone}`} className="hover:bg-slate-50/50 transition-colors">
@@ -198,7 +240,18 @@ export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok
                     <span className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-white text-slate-600 font-bold text-xs border border-slate-200 shadow-sm">Zone {zone}</span>
                   </td>
                   <td className="py-4 px-6 text-center border-r border-b border-slate-100 font-black text-slate-700 text-sm">{stats.num}</td>
-                  <td className="py-4 px-6 text-center border-r border-b border-slate-100 font-black text-slate-500 text-sm">{stats.denum}</td>
+                  <td className="py-4 px-6 text-center border-r border-b border-slate-100 font-black text-slate-500 text-sm">
+                    <div className="flex flex-col items-center justify-center gap-1.5">
+                      <span>{stats.denum}</span>
+                      {/* PDM Badge Luxe */}
+                      {stats.denum > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50/80 border border-indigo-100 px-2 py-0.5 rounded-md">
+                          <PieChart size={10} className="text-indigo-500" />
+                          {formatPdm(pdm)} PDM
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-4 px-6 border-b border-slate-100">
                      <div className="flex flex-col items-center justify-center gap-2">
                         <span className={cn("px-4 py-1.5 rounded-full text-xs font-bold border flex items-center gap-2", styles.badge, styles.text)}>
