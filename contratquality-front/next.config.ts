@@ -1,12 +1,11 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: "standalone", // HADI HIA LI KAT-KHELLI DOCKER Y-KHEDDEM MZYAN
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  output: "standalone",
   typescript: {
     ignoreBuildErrors: true,
   },
+  // eslint a été retiré car il n'est plus supporté ici dans Next.js 15+
 };
 
 export default nextConfig;
