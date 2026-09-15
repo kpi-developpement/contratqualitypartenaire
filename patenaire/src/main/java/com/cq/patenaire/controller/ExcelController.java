@@ -1,6 +1,6 @@
 package com.cq.patenaire.controller;
 
-import com.cq.patenaire.dto.ReportResponse;
+import com.cq.patenaire.entity.MonthlyReport;
 import com.cq.patenaire.service.ExcelProcessingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,26 +25,48 @@ public class ExcelController {
         this.excelProcessingService = excelProcessingService;
     }
 
-    @PostMapping("/upload")
-    public ResponseEntity<?> uploadExcelFile(@RequestParam("file") MultipartFile file) {
-        log.info("Requête reçue sur /api/v1/excel/upload");
+    @GetMapping("/report/{period}")
+    public ResponseEntity<MonthlyReport> getReport(@PathVariable String period) {
+        return ResponseEntity.ok(excelProcessingService.getReportByPeriod(period));
+    }
 
-        if (file.isEmpty()) {
-            log.warn("Le fichier reçu est vide.");
-            Map<String, String> error = new HashMap<>();
-            error.put("message", "Le fichier est vide.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    @PostMapping("/upload/rang")
+    public ResponseEntity<?> uploadRangFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
+        return handleUpload(file, period, "RANG");
+    }
+
+    @PostMapping("/upload/satcli")
+    public ResponseEntity<?> uploadSatcliFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
+        return handleUpload(file, period, "SATCLI");
+    }
+
+    @PostMapping("/upload/plainte")
+    public ResponseEntity<?> uploadPlainteFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
+        return handleUpload(file, period, "PLAINTE");
+    }
+
+    private ResponseEntity<?> handleUpload(MultipartFile file, String period, String type) {
+        if (file.isEmpty() || period == null || period.trim().isEmpty()) {
+            Map<String, String> err = new HashMap<>();
+            err.put("message", "Fichier ou période invalide.");
+            return ResponseEntity.badRequest().body(err);
         }
 
         try {
-            ReportResponse result = excelProcessingService.processFile(file);
-            log.info("Fichier traité avec succès. Renvoi de la réponse JSON.");
+            MonthlyReport result;
+            if ("RANG".equals(type)) {
+                result = excelProcessingService.processRangFile(file, period);
+            } else if ("SATCLI".equals(type)) {
+                result = excelProcessingService.processSatcliFile(file, period);
+            } else {
+                result = excelProcessingService.processPlainteFile(file, period);
+            }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            log.error("Erreur lors du traitement : {}", e.getMessage(), e);
-            Map<String, String> error = new HashMap<>();
-            error.put("message", "Erreur : " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            log.error("Erreur (Type: {}) : {}", type, e.getMessage(), e);
+            Map<String, String> err = new HashMap<>();
+            err.put("message", "Erreur : " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
         }
     }
 }

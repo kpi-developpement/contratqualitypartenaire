@@ -1,69 +1,102 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FileUpload from "@/components/FileUpload";
 import IndicatorsTable from "@/components/IndicatorsTable";
 import FadeIn from "@/components/animations/FadeIn";
 import SlideUp from "@/components/animations/SlideUp";
 import { ReportResponse } from "@/types";
-import { BarChart3, AlertCircle } from "lucide-react";
+import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown } from "lucide-react";
+import { fetchReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile } from "@/services/api";
 
 export default function Home() {
+  const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7)); // Ex: 2026-07
   const [reportData, setReportData] = useState<ReportResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const rang1Data = reportData ? (reportData.perf_rang1 || reportData.perf_rang_1 || reportData.perfRang1) : undefined;
-  const rang2Data = reportData ? (reportData.perf_rang2 || reportData.perf_rang_2 || reportData.perfRang2) : undefined;
-  const tnhData = reportData ? reportData.tnh : undefined;
-  const satcliOkData = reportData ? (reportData.satcli_ok || reportData.satcliOk) : undefined;
-  const satcliNokData = reportData ? (reportData.satcli_nok || reportData.satcliNok) : undefined;
+  // Charger les données de la période à chaque changement
+  useEffect(() => {
+    fetchReport(period).then(data => setReportData(data)).catch(() => setReportData(null));
+  }, [period]);
+
+  const handleSuccess = (data: any) => {
+    setReportData(data);
+    setError(null);
+  };
 
   return (
     <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-slate-100 to-slate-200 p-6 md:p-12 font-sans selection:bg-blue-200">
       <div className="max-w-7xl mx-auto space-y-12">
         
-        <FadeIn delay={0.1} className="text-center space-y-4 pt-8">
-          <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm border border-slate-200/60 mb-4">
+        {/* Header Section */}
+        <FadeIn delay={0.1} className="flex flex-col items-center justify-center space-y-6 pt-8">
+          <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm border border-slate-200/60">
             <BarChart3 className="text-blue-600" size={28} />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight text-center">
             ContratQuality <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Partenaire</span>
           </h1>
-          <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
-            Analysez vos fichiers d'intervention et générez vos indicateurs de performance en temps réel.
-          </p>
+
+          {/* Month Picker */}
+          <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-full shadow-sm border border-slate-200">
+            <span className="font-bold text-slate-600 text-sm uppercase tracking-wide">Période :</span>
+            <input 
+              type="month" 
+              value={period} 
+              onChange={(e) => setPeriod(e.target.value)}
+              className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer"
+            />
+          </div>
         </FadeIn>
 
-        <SlideUp delay={0.2} className="max-w-3xl mx-auto">
-          <FileUpload 
-            onUploadSuccess={(data) => {
-              console.log("JSON reçu :", data);
-              setReportData(data);
-            }}
-            onUploadError={(err) => setError(err)}
-            onLoading={(loading) => setIsLoading(loading)}
-          />
+        {error && (
+          <FadeIn className="max-w-3xl mx-auto p-5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 shadow-sm">
+            <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={20} />
+            <div>
+              <h3 className="text-sm font-bold text-rose-800">Erreur</h3>
+              <p className="text-sm text-rose-600 mt-1">{error}</p>
+            </div>
+          </FadeIn>
+        )}
 
-          {error && (
-            <FadeIn className="mt-6 p-5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 shadow-sm">
-              <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={20} />
-              <div>
-                <h3 className="text-sm font-bold text-rose-800">Erreur d'analyse</h3>
-                <p className="text-sm text-rose-600 mt-1">{error}</p>
-              </div>
-            </FadeIn>
-          )}
+        {/* Uploads Grid */}
+        <SlideUp delay={0.2} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FileUpload 
+            title="Import RANG & TNH"
+            description="Fichier source (PLP, Constru, Hotline)"
+            icon={<FileSpreadsheet size={36} className="text-blue-500" strokeWidth={1.5} />}
+            uploadAction={(file) => uploadRangFile(file, period)}
+            onUploadSuccess={handleSuccess}
+            onUploadError={setError}
+          />
+          <FileUpload 
+            title="Import SATCLI"
+            description="Indicateurs OK & NOK"
+            icon={<Star size={36} className="text-teal-500" strokeWidth={1.5} />}
+            uploadAction={(file) => uploadSatcliFile(file, period)}
+            onUploadSuccess={handleSuccess}
+            onUploadError={setError}
+          />
+          <FileUpload 
+            title="Import Taux Plainte"
+            description="Volume ticket qualité (Nécessite TNH)"
+            icon={<Frown size={36} className="text-rose-500" strokeWidth={1.5} />}
+            uploadAction={(file) => uploadPlainteFile(file, period)}
+            onUploadSuccess={handleSuccess}
+            onUploadError={setError}
+          />
         </SlideUp>
 
-        {reportData && (rang1Data || rang2Data || tnhData || satcliOkData || satcliNokData) && (
+        {/* Dashboard Unified Section */}
+        {reportData && (
           <SlideUp delay={0.1} className="pt-8">
             <IndicatorsTable 
-              rang1={rang1Data} 
-              rang2={rang2Data} 
-              tnh={tnhData} 
-              satcliOk={satcliOkData} 
-              satcliNok={satcliNokData} 
+              rang1={reportData.perf_rang1 || reportData.perf_rang_1 || reportData.perfRang1} 
+              rang2={reportData.perf_rang2 || reportData.perf_rang_2 || reportData.perfRang2} 
+              tnh={reportData.tnh} 
+              satcliOk={reportData.satcli_ok || reportData.satcliOk} 
+              satcliNok={reportData.satcli_nok || reportData.satcliNok} 
+              tauxPlainte={reportData.taux_plainte || reportData.tauxPlainte}
             />
           </SlideUp>
         )}
