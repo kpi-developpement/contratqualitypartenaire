@@ -5,6 +5,7 @@ import FileUpload from "@/components/FileUpload";
 import IndicatorsTable from "@/components/IndicatorsTable";
 import FadeIn from "@/components/animations/FadeIn";
 import SlideUp from "@/components/animations/SlideUp";
+import InteractiveBackground from "@/components/InteractiveBackground";
 import { ReportResponse } from "@/types";
 import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown } from "lucide-react";
 import { fetchReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile } from "@/services/api";
@@ -14,7 +15,6 @@ export default function Home() {
   const [reportData, setReportData] = useState<ReportResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Charger les données de la période à chaque changement
   useEffect(() => {
     fetchReport(period).then(data => setReportData(data)).catch(() => setReportData(null));
   }, [period]);
@@ -25,36 +25,42 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-slate-100 to-slate-200 p-6 md:p-12 font-sans selection:bg-blue-200">
-      <div className="max-w-7xl mx-auto space-y-12">
+    // L'background wla slate-950 bach ybeyen l'animation 3D w l'glassmorphism
+    <main className="min-h-screen bg-slate-950 p-6 md:p-12 font-sans selection:bg-blue-500/30 relative overflow-hidden">
+      
+      {/* 3D Background Component */}
+      <InteractiveBackground />
+
+      {/* Main Content (Z-10 bach yb9a lfo9 d l'animation 3D) */}
+      <div className="max-w-7xl mx-auto space-y-12 relative z-10">
         
         {/* Header Section */}
         <FadeIn delay={0.1} className="flex flex-col items-center justify-center space-y-6 pt-8">
-          <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm border border-slate-200/60">
-            <BarChart3 className="text-blue-600" size={28} />
+          <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-md rounded-2xl shadow-[0_0_15px_rgba(59,130,246,0.2)] border border-white/20">
+            <BarChart3 className="text-blue-400" size={28} />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight text-center">
-            ContratQuality <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Partenaire</span>
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight text-center drop-shadow-xl">
+            ContratQuality <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Partenaire</span>
           </h1>
 
-          {/* Month Picker */}
-          <div className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-full shadow-sm border border-slate-200">
-            <span className="font-bold text-slate-600 text-sm uppercase tracking-wide">Période :</span>
+          {/* Month Picker b Glassmorphism UI */}
+          <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.15)] border border-white/20">
+            <span className="font-bold text-blue-100 text-sm uppercase tracking-wide">Période :</span>
             <input 
               type="month" 
               value={period} 
               onChange={(e) => setPeriod(e.target.value)}
-              className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent text-white font-bold focus:outline-none cursor-pointer [color-scheme:dark]"
             />
           </div>
         </FadeIn>
 
         {error && (
-          <FadeIn className="max-w-3xl mx-auto p-5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 shadow-sm">
-            <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={20} />
+          <FadeIn className="max-w-3xl mx-auto p-5 bg-rose-500/20 backdrop-blur-md border border-rose-500/50 rounded-2xl flex items-start gap-3 shadow-lg">
+            <AlertCircle className="text-rose-400 shrink-0 mt-0.5" size={20} />
             <div>
-              <h3 className="text-sm font-bold text-rose-800">Erreur</h3>
-              <p className="text-sm text-rose-600 mt-1">{error}</p>
+              <h3 className="text-sm font-bold text-rose-100">Erreur</h3>
+              <p className="text-sm text-rose-200 mt-1">{error}</p>
             </div>
           </FadeIn>
         )}
