@@ -2,24 +2,26 @@
 
 import React from "react";
 import { IndicatorResult } from "@/types";
-import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle } from "lucide-react";
+import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface IndicatorsTableProps {
   rang1?: Record<string, Record<string, IndicatorResult>>;
   rang2?: Record<string, IndicatorResult>;
   tnh?: IndicatorResult;
+  satcliOk?: IndicatorResult;
+  satcliNok?: IndicatorResult;
 }
 
-export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTableProps) {
-  if (!rang1 && !rang2 && !tnh) return null;
+export default function IndicatorsTable({ rang1, rang2, tnh, satcliOk, satcliNok }: IndicatorsTableProps) {
+  if (!rang1 && !rang2 && !tnh && !satcliOk && !satcliNok) return null;
 
   const activities = ["PLP", "Construction", "Hotline"];
   const zones = ["A", "B", "C"];
 
-  const formatPercent = (value: number) => (value * 100).toFixed(1) + "%";
+  // 2 ar9am mn mor lfassila kima bghiti
+  const formatPercent = (value: number) => (value * 100).toFixed(2) + "%";
 
-  // Styles génériques pour la barre (Vert si >= 80%, etc.)
   const getScoreStyles = (value: number) => {
     if (value >= 0.8) return {
       bar: "bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]",
@@ -38,22 +40,28 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
     };
   };
 
-  // Styles spécifiques pour TNH (Souvent, plus c'est bas mieux c'est. A toi de changer les couleurs si besoin).
-  const getTnhStyles = (value: number) => {
-    return {
-      bar: "bg-gradient-to-r from-indigo-400 to-purple-500 shadow-[0_0_12px_rgba(99,102,241,0.5)]",
-      text: "text-indigo-700",
-      badge: "bg-indigo-50 border-indigo-200/60 shadow-indigo-100/50"
-    };
-  };
+  const getTnhStyles = (value: number) => ({
+    bar: "bg-gradient-to-r from-purple-400 to-purple-600 shadow-[0_0_12px_rgba(147,51,234,0.5)]",
+    text: "text-purple-700",
+    badge: "bg-purple-50 border-purple-200/60 shadow-purple-100/50"
+  });
+
+  const getSatOkStyles = (value: number) => ({
+    bar: "bg-gradient-to-r from-teal-400 to-teal-500 shadow-[0_0_12px_rgba(20,184,166,0.5)]",
+    text: "text-teal-700",
+    badge: "bg-teal-50 border-teal-200/60 shadow-teal-100/50"
+  });
+
+  const getSatNokStyles = (value: number) => ({
+    bar: "bg-gradient-to-r from-orange-400 to-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.5)]",
+    text: "text-orange-700",
+    badge: "bg-orange-50 border-orange-200/60 shadow-orange-100/50"
+  });
 
   return (
     <div className="w-full bg-white/70 backdrop-blur-2xl rounded-[2rem] shadow-[0_8px_40px_rgb(0,0,0,0.04)] border border-white/60 overflow-hidden relative">
-      
-      {/* Glow Effect */}
       <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      {/* Header */}
       <div className="px-8 py-7 border-b border-slate-200/50 bg-white/50 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-5">
           <div className="p-3.5 bg-slate-900 rounded-2xl text-white shadow-xl shadow-slate-900/20 ring-1 ring-white/10">
@@ -63,13 +71,12 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">Tableau de Bord Unifié</h2>
             <p className="text-sm text-slate-500 font-medium mt-1 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              Indicateurs de Performance & Taux de Non Honoré
+              Indicateurs de Performance Générés
             </p>
           </div>
         </div>
       </div>
       
-      {/* Table Container */}
       <div className="p-6 md:p-8 relative z-10 overflow-x-auto">
         <table className="w-full text-sm text-left border-collapse min-w-[900px]">
           <thead>
@@ -90,9 +97,7 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
           </thead>
           <tbody className="divide-y divide-slate-100/80">
             
-            {/* ======================================================== */}
-            {/* SECTION RANG 1 */}
-            {/* ======================================================== */}
+            {/* RANG 1 */}
             {rang1 && activities.map((activity, actIndex) => {
               return zones.map((zone, zIndex) => {
                 const stats = rang1[activity]?.[zone] || { num: 0, denum: 0, resultat: 0 };
@@ -101,8 +106,6 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
                 
                 return (
                   <tr key={`R1-${activity}-${zone}`} className="hover:bg-blue-50/30 transition-all duration-200">
-                    
-                    {/* Colonne Niveau (PERF RANG 1) - Rowspan ultra premium */}
                     {actIndex === 0 && zIndex === 0 && (
                       <td rowSpan={activities.length * zones.length} className="py-6 px-4 align-middle border-r border-b border-slate-200/80">
                         <div className="flex flex-col items-center justify-center gap-6 py-12 px-4 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-800 shadow-xl shadow-slate-900/10 border border-slate-700/50">
@@ -113,8 +116,6 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
                         </div>
                       </td>
                     )}
-
-                    {/* Colonne Activité */}
                     {zIndex === 0 && (
                       <td rowSpan={zones.length} className="py-6 px-6 align-middle border-r border-b border-slate-200/80 bg-white">
                         <div className="flex items-center gap-3.5 p-4 rounded-xl bg-white shadow-sm border border-slate-100 transition-colors">
@@ -125,19 +126,13 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
                         </div>
                       </td>
                     )}
-
-                    {/* Stats Zone Rang 1 */}
                     <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-white">
                       <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-700 font-bold text-sm border border-slate-200/60 shadow-sm">
                         Zone {zone}
                       </span>
                     </td>
-                    <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-white">
-                      <span className="font-black text-slate-700 text-[15px]">{stats.num}</span>
-                    </td>
-                    <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-white">
-                      <span className="font-black text-slate-500 text-[15px]">{stats.denum}</span>
-                    </td>
+                    <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-white font-black text-slate-700 text-[15px]">{stats.num}</td>
+                    <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-white font-black text-slate-500 text-[15px]">{stats.denum}</td>
                     <td className="py-5 px-6 bg-white">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <span className={cn("px-4 py-1.5 rounded-full text-sm font-black border shadow-sm flex items-center gap-1.5", styles.badge, styles.text)}>
@@ -156,9 +151,7 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
               });
             })}
 
-            {/* ======================================================== */}
-            {/* SECTION RANG 2 */}
-            {/* ======================================================== */}
+            {/* RANG 2 */}
             {rang2 && zones.map((zone, zIndex) => {
               const stats = rang2[zone] || { num: 0, denum: 0, resultat: 0 };
               const percentValue = stats.resultat * 100;
@@ -175,7 +168,6 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
                       </div>
                     </td>
                   )}
-
                   {zIndex === 0 && (
                     <td rowSpan={zones.length} className="py-6 px-6 align-middle border-r border-b border-slate-200/80 bg-slate-50/30">
                       <div className="flex items-center justify-center p-4 rounded-xl border border-dashed border-slate-300 bg-white/50 text-slate-500 font-bold">
@@ -183,7 +175,6 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
                       </div>
                     </td>
                   )}
-
                   <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-slate-50/30">
                     <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-white text-slate-700 font-bold text-sm border border-slate-200 shadow-sm">
                       Zone {zone}
@@ -208,12 +199,10 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
               );
             })}
 
-            {/* ======================================================== */}
-            {/* SECTION TNH (Taux de Non Honoré) */}
-            {/* ======================================================== */}
+            {/* TNH */}
             {tnh && (
               <tr className="hover:bg-purple-50/30 transition-all duration-200">
-                <td className="py-6 px-4 align-middle border-r border-slate-200/80">
+                <td className="py-6 px-4 align-middle border-r border-b border-slate-200/80">
                   <div className="flex flex-col items-center justify-center gap-4 py-6 px-4 rounded-2xl bg-gradient-to-b from-purple-900 to-purple-800 shadow-xl shadow-purple-900/10 border border-purple-700/50">
                     <AlertTriangle size={20} className="text-purple-300" />
                     <span className="font-black text-lg text-white tracking-[0.3em] rotate-180 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
@@ -221,31 +210,102 @@ export default function IndicatorsTable({ rang1, rang2, tnh }: IndicatorsTablePr
                     </span>
                   </div>
                 </td>
-                
-                <td className="py-6 px-6 align-middle border-r border-slate-200/80 bg-purple-50/10">
-                  <div className="flex items-center justify-center p-4 rounded-xl border border-purple-200 bg-purple-50/50 text-purple-700 font-extrabold shadow-sm">
-                    Indicateur Global
-                  </div>
+                <td className="py-6 px-6 align-middle border-r border-b border-slate-200/80 bg-purple-50/10">
+                  <div className="flex items-center justify-center p-4 rounded-xl border border-purple-200 bg-purple-50/50 text-purple-700 font-extrabold shadow-sm">Indicateur Global</div>
                 </td>
-
-                <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-purple-50/10">
-                  <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-white text-slate-700 font-bold text-sm border border-slate-200 shadow-sm">
-                    Toutes Zones
-                  </span>
+                <td className="py-5 px-6 text-center border-r border-b border-slate-100/80 bg-purple-50/10">
+                  <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-white text-slate-700 font-bold text-sm border border-slate-200 shadow-sm">Toutes Zones</span>
                 </td>
-                
-                <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-purple-50/10 font-black text-slate-700 text-[15px]">{tnh.num}</td>
-                <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-purple-50/10 font-black text-slate-500 text-[15px]">{tnh.denum}</td>
-                
-                <td className="py-5 px-6 bg-purple-50/10">
+                <td className="py-5 px-6 text-center border-r border-b border-slate-100/80 bg-purple-50/10 font-black text-slate-700 text-[15px]">{tnh.num}</td>
+                <td className="py-5 px-6 text-center border-r border-b border-slate-100/80 bg-purple-50/10 font-black text-slate-500 text-[15px]">{tnh.denum}</td>
+                <td className="py-5 px-6 border-b border-slate-100/80 bg-purple-50/10">
                   {(() => {
                     const percentValue = tnh.resultat * 100;
                     const styles = getTnhStyles(tnh.resultat);
                     return (
                       <div className="flex flex-col items-center justify-center gap-3">
                         <span className={cn("px-4 py-1.5 rounded-full text-sm font-black border shadow-sm flex items-center gap-1.5", styles.badge, styles.text)}>
-                          <div className={cn("w-1.5 h-1.5 rounded-full", styles.bar.split(' ')[0])}></div>
-                          {formatPercent(tnh.resultat)}
+                          <div className={cn("w-1.5 h-1.5 rounded-full", styles.bar.split(' ')[0])}></div>{formatPercent(tnh.resultat)}
+                        </span>
+                        <div className="w-full max-w-[160px] bg-slate-100 rounded-full h-2.5 overflow-hidden shadow-inner relative">
+                          <div className={cn("h-full rounded-full transition-all duration-1000 ease-out relative", styles.bar)} style={{ width: `${percentValue}%` }}>
+                            <div className="absolute top-0 bottom-0 left-0 right-0 bg-white/20"></div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </td>
+              </tr>
+            )}
+
+            {/* SATCLI OK */}
+            {satcliOk && (
+              <tr className="hover:bg-teal-50/30 transition-all duration-200">
+                <td className="py-6 px-4 align-middle border-r border-b border-slate-200/80">
+                  <div className="flex flex-col items-center justify-center gap-4 py-6 px-4 rounded-2xl bg-gradient-to-b from-teal-600 to-teal-700 shadow-xl shadow-teal-900/10 border border-teal-500/50">
+                    <Star size={20} className="text-teal-100 fill-teal-100" />
+                    <span className="font-black text-lg text-white tracking-[0.2em] rotate-180 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
+                      SAT OK
+                    </span>
+                  </div>
+                </td>
+                <td className="py-6 px-6 align-middle border-r border-b border-slate-200/80 bg-teal-50/10">
+                  <div className="flex items-center justify-center p-4 rounded-xl border border-teal-200 bg-teal-50/50 text-teal-700 font-extrabold shadow-sm">Satisfaction Validée</div>
+                </td>
+                <td className="py-5 px-6 text-center border-r border-b border-slate-100/80 bg-teal-50/10">
+                  <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-white text-slate-700 font-bold text-sm border border-slate-200 shadow-sm">Toutes Zones</span>
+                </td>
+                <td className="py-5 px-6 text-center border-r border-b border-slate-100/80 bg-teal-50/10 font-black text-slate-700 text-[15px]">{satcliOk.num}</td>
+                <td className="py-5 px-6 text-center border-r border-b border-slate-100/80 bg-teal-50/10 font-black text-slate-500 text-[15px]">{satcliOk.denum}</td>
+                <td className="py-5 px-6 border-b border-slate-100/80 bg-teal-50/10">
+                  {(() => {
+                    const percentValue = satcliOk.resultat * 100;
+                    const styles = getSatOkStyles(satcliOk.resultat);
+                    return (
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <span className={cn("px-4 py-1.5 rounded-full text-sm font-black border shadow-sm flex items-center gap-1.5", styles.badge, styles.text)}>
+                          <div className={cn("w-1.5 h-1.5 rounded-full", styles.bar.split(' ')[0])}></div>{formatPercent(satcliOk.resultat)}
+                        </span>
+                        <div className="w-full max-w-[160px] bg-slate-100 rounded-full h-2.5 overflow-hidden shadow-inner relative">
+                          <div className={cn("h-full rounded-full transition-all duration-1000 ease-out relative", styles.bar)} style={{ width: `${percentValue}%` }}>
+                            <div className="absolute top-0 bottom-0 left-0 right-0 bg-white/20"></div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </td>
+              </tr>
+            )}
+
+            {/* SATCLI NOK */}
+            {satcliNok && (
+              <tr className="hover:bg-orange-50/30 transition-all duration-200">
+                <td className="py-6 px-4 align-middle border-r border-slate-200/80">
+                  <div className="flex flex-col items-center justify-center gap-4 py-6 px-4 rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 shadow-xl shadow-orange-900/10 border border-orange-400/50">
+                    <Frown size={20} className="text-orange-50" />
+                    <span className="font-black text-lg text-white tracking-[0.2em] rotate-180 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
+                      SAT NOK
+                    </span>
+                  </div>
+                </td>
+                <td className="py-6 px-6 align-middle border-r border-slate-200/80 bg-orange-50/10">
+                  <div className="flex items-center justify-center p-4 rounded-xl border border-orange-200 bg-orange-50/50 text-orange-700 font-extrabold shadow-sm">Insatisfaction Signalée</div>
+                </td>
+                <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-orange-50/10">
+                  <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-white text-slate-700 font-bold text-sm border border-slate-200 shadow-sm">Toutes Zones</span>
+                </td>
+                <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-orange-50/10 font-black text-slate-700 text-[15px]">{satcliNok.num}</td>
+                <td className="py-5 px-6 text-center border-r border-slate-100/80 bg-orange-50/10 font-black text-slate-500 text-[15px]">{satcliNok.denum}</td>
+                <td className="py-5 px-6 bg-orange-50/10">
+                  {(() => {
+                    const percentValue = satcliNok.resultat * 100;
+                    const styles = getSatNokStyles(satcliNok.resultat);
+                    return (
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <span className={cn("px-4 py-1.5 rounded-full text-sm font-black border shadow-sm flex items-center gap-1.5", styles.badge, styles.text)}>
+                          <div className={cn("w-1.5 h-1.5 rounded-full", styles.bar.split(' ')[0])}></div>{formatPercent(satcliNok.resultat)}
                         </span>
                         <div className="w-full max-w-[160px] bg-slate-100 rounded-full h-2.5 overflow-hidden shadow-inner relative">
                           <div className={cn("h-full rounded-full transition-all duration-1000 ease-out relative", styles.bar)} style={{ width: `${percentValue}%` }}>
