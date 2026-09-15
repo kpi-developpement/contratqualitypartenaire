@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import FileUpload from "@/components/FileUpload";
 import IndicatorsTable from "@/components/IndicatorsTable";
+import BonusSimulation from "@/components/BonusSimulation";
 import FadeIn from "@/components/animations/FadeIn";
 import SlideUp from "@/components/animations/SlideUp";
 import InteractiveBackground from "@/components/InteractiveBackground";
@@ -24,8 +25,12 @@ export default function Home() {
     setError(null);
   };
 
+  const hasData = !!reportData && Object.keys(reportData).length > 0;
+
   return (
-    <main className="min-h-screen relative font-sans selection:bg-blue-200">
+    <main className="min-h-screen relative font-sans selection:bg-blue-100 bg-[#fafcff]">
+      
+      {/* Background interactif Luxe */}
       <InteractiveBackground />
 
       <div className="max-w-7xl mx-auto space-y-12 relative z-10 p-6 md:p-12">
@@ -58,7 +63,6 @@ export default function Home() {
           </FadeIn>
         )}
 
-        {/* Uploads Grid - M9ada parfaitement l 6 boxes */}
         <SlideUp delay={0.2} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <FileUpload 
             title="Import RANG & TNH"
@@ -111,7 +115,8 @@ export default function Home() {
         </SlideUp>
 
         {reportData && (
-          <SlideUp delay={0.1} className="pt-8">
+          <SlideUp delay={0.1} className="pt-8 space-y-12">
+            
             <IndicatorsTable 
               rang1={reportData.perf_rang1 || reportData.perf_rang_1 || reportData.perfRang1} 
               rang2={reportData.perf_rang2 || reportData.perf_rang_2 || reportData.perfRang2} 
@@ -123,6 +128,10 @@ export default function Home() {
               cadrage={reportData.cadrage}
               gemNok={reportData.gem_nok || reportData.gemNok}
             />
+
+            {/* Nouveau tableau de Simulation du Bonus géré par l'API Backend */}
+            <BonusSimulation period={period} hasData={hasData} />
+
           </SlideUp>
         )}
 
