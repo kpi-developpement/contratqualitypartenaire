@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import FileUpload from "@/components/FileUpload";
 import IndicatorsTable from "@/components/IndicatorsTable";
-import BonusSimulation from "@/components/BonusSimulation";
 import FadeIn from "@/components/animations/FadeIn";
 import SlideUp from "@/components/animations/SlideUp";
 import InteractiveBackground from "@/components/InteractiveBackground";
@@ -30,7 +29,7 @@ export default function Home() {
   return (
     <main className="min-h-screen relative font-sans selection:bg-blue-100 bg-[#fafcff]">
       
-      {/* Background interactif Luxe */}
+      {/* Subtle Luxury Grid Background */}
       <InteractiveBackground />
 
       <div className="max-w-7xl mx-auto space-y-12 relative z-10 p-6 md:p-12">
@@ -114,10 +113,10 @@ export default function Home() {
           />
         </SlideUp>
 
-        {reportData && (
-          <SlideUp delay={0.1} className="pt-8 space-y-12">
-            
+        {hasData && (
+          <SlideUp delay={0.1} className="pt-8">
             <IndicatorsTable 
+              period={period}
               rang1={reportData.perf_rang1 || reportData.perf_rang_1 || reportData.perfRang1} 
               rang2={reportData.perf_rang2 || reportData.perf_rang_2 || reportData.perfRang2} 
               tnh={reportData.tnh} 
@@ -128,10 +127,6 @@ export default function Home() {
               cadrage={reportData.cadrage}
               gemNok={reportData.gem_nok || reportData.gemNok}
             />
-
-            {/* Nouveau tableau de Simulation du Bonus géré par l'API Backend */}
-            <BonusSimulation period={period} hasData={hasData} />
-
           </SlideUp>
         )}
 
