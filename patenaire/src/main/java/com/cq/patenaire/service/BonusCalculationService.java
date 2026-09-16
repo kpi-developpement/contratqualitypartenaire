@@ -26,48 +26,80 @@ public class BonusCalculationService {
         MonthlyReport report = repository.findById(period)
                 .orElseThrow(() -> new RuntimeException("Aucun rapport trouvé pour la période: " + period));
 
-        // 1. Calcul des dénominateurs totaux pour la Part de Marché (PDM)
         double totalDenumR1 = calculateTotalDenumR1(report);
         double totalDenumR2 = calculateTotalDenumR2(report);
 
         Map<String, BonusResultItem> results = new HashMap<>();
 
-        // 2. Parcourir la configuration envoyée par l'API pour chaque indicateur
         for (Map.Entry<String, BonusTargetConfig> entry : config.getTargets().entrySet()) {
             String indicatorId = entry.getKey();
             BonusTargetConfig target = entry.getValue();
 
             IndicatorResult stat = getIndicatorStat(report, indicatorId);
-            if (stat == null) {
-                continue; // Si l'indicateur n'existe pas dans le rapport, on passe
-            }
+            if (stat == null) continue;
 
             double resultat = stat.getResultat();
             double pdm = 0.0;
 
-            // Calcul du PDM selon le type (Rang 1 ou Rang 2)
             if (indicatorId.startsWith("RANG2")) {
                 if (totalDenumR2 > 0) pdm = stat.getDenum() / totalDenumR2;
-            } else {
+            } else if (indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline")) {
                 if (totalDenumR1 > 0) pdm = stat.getDenum() / totalDenumR1;
             }
 
-            // 3. Application stricte de la formule Excel:
-            // =SI(E6<=G6; $I$6*F6; SI(E6>=H6; F6*$J$6; (E6-G6)/(H6-G6)*$J$6*F6*G29))
-            double bonus = 0.0;
             double tMin = target.getPointMin() / 100.0;
             double tMax = target.getPointMax() / 100.0;
-            double bMin = config.getBonusMin() / 100.0;
-            double bMax = config.getBonusMax() / 100.0;
-            double g29 = config.getFacteurG29();
 
-            if (resultat <= tMin) {
-                bonus = bMin * pdm;
-            } else if (resultat >= tMax) {
-                bonus = pdm * bMax;
-            } else {
-                if (tMax > tMin) { // Protection division par zéro
-                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * pdm * g29;
+            // On prend le bonus de l'indicateur s'il existe, sinon on prend le global
+            double bMin = target.getBonusMin() != null ? target.getBonusMin() / 100.0 : config.getBonusMin() / 100.0;
+            double bMax = target.getBonusMax() != null ? target.getBonusMax() / 100.0 : config.getBonusMax() / 100.0;
+
+            double bonus = 0.0;
+
+            // ==========================================
+            // APPLICATION STRICTE DE VOS FORMULES EXCEL
+            // ==========================================
+            if (indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline") || indicatorId.startsWith("RANG2")) {
+                // =SI(E6<=G6;$I$6*F6;SI(E6>=H6;F6*$J$6;(E6-G6)/(H6-G6)*$J$6*F6*G29))
+                if (resultat <= tMin) {
+                    bonus = bMin * pdm;
+                } else if (resultat >= tMax) {
+                    bonus = bMax * pdm;
+                } else if (tMax != tMin) {
+                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * pdm * config.getFacteurG29();
+                }
+            }
+            else if (indicatorId.equals("SATCLI_OK") || indicatorId.equals("SATCLI_NOK")) {
+                // =SI(E<=G;I;SI(E>=H;J;(E-G)/(H-G)*J))
+                if (resultat <= tMin) {
+                    bonus = bMin;
+                } else if (resultat >= tMax) {
+                    bonus = bMax;
+                } else if (tMax != tMin) {
+                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax;
+                }
+            }
+            else if (indicatorId.equals("PLAINTE") || indicatorId.equals("TNH") || indicatorId.equals("CADRAGE") || indicatorId.equals("INCOHERENCE_PTO")) {
+                // LOGIQUE INVERSÉE : =SI(E>=G;I;SI(E<=H;J;(E-G)/(H-G)*J*FACTEUR))
+                if (resultat >= tMin) {
+                    bonus = bMin;
+                } else if (resultat <= tMax) {
+                    bonus = bMax;
+                } else if (tMax != tMin) {
+                    double facteur = 1.0;
+                    if (indicatorId.equals("TNH")) facteur = config.getFacteurG45();
+                    if (indicatorId.equals("CADRAGE")) facteur = config.getFacteurG46();
+                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * facteur;
+                }
+            }
+            else if (indicatorId.equals("GEM_NOK")) {
+                // =SI(E<=G;I;SI(E>=H;J;(E-G)/(H-G)*J*G44))
+                if (resultat <= tMin) {
+                    bonus = bMin;
+                } else if (resultat >= tMax) {
+                    bonus = bMax;
+                } else if (tMax != tMin) {
+                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * config.getFacteurG44();
                 }
             }
 
@@ -99,21 +131,24 @@ public class BonusCalculationService {
         return sum;
     }
 
-    // Helper pour extraire l'indicateur selon l'ID (ex: "PLP-A" ou "RANG2-B")
     private IndicatorResult getIndicatorStat(MonthlyReport report, String indicatorId) {
-        String[] parts = indicatorId.split("-");
-        if (parts.length != 2) return null;
-
-        String category = parts[0];
-        String zone = parts[1];
-
-        if ("RANG2".equals(category)) {
-            if (report.getPerfRang2() != null) {
-                return report.getPerfRang2().get(zone);
+        if (indicatorId.startsWith("RANG2")) {
+            String zone = indicatorId.split("-")[1];
+            return report.getPerfRang2() != null ? report.getPerfRang2().get(zone) : null;
+        } else if (indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline")) {
+            String[] parts = indicatorId.split("-");
+            if (report.getPerfRang1() != null && report.getPerfRang1().containsKey(parts[0])) {
+                return report.getPerfRang1().get(parts[0]).get(parts[1]);
             }
         } else {
-            if (report.getPerfRang1() != null && report.getPerfRang1().containsKey(category)) {
-                return report.getPerfRang1().get(category).get(zone);
+            switch (indicatorId) {
+                case "SATCLI_OK": return report.getSatcliOk();
+                case "SATCLI_NOK": return report.getSatcliNok();
+                case "PLAINTE": return report.getTauxPlainte();
+                case "GEM_NOK": return report.getGemNok();
+                case "TNH": return report.getTnh();
+                case "CADRAGE": return report.getCadrage();
+                case "INCOHERENCE_PTO": return report.getIncoherencePto();
             }
         }
         return null;

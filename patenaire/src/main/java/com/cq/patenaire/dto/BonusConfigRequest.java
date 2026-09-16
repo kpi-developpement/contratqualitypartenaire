@@ -16,5 +16,14 @@ public class BonusConfigRequest {
     @JsonProperty("facteurG29")
     private double facteurG29;
 
+    @JsonProperty("facteurG44")
+    private double facteurG44;
+
+    @JsonProperty("facteurG45")
+    private double facteurG45;
+
+    @JsonProperty("facteurG46")
+    private double facteurG46;
+
     private Map<String, BonusTargetConfig> targets;
 }
