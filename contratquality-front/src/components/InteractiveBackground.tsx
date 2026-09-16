@@ -18,13 +18,20 @@ export default function InteractiveBackground() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#f8fafc]">
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
       
-      {/* Grid Animée (Défilement continu très lent "breathing") */}
+      {/* Background Gradient Animé (La couleur li "dayza" w kat-vivre) */}
+      <motion.div
+        animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+        transition={{ duration: 25, ease: "linear", repeat: Infinity }}
+        className="absolute inset-0 bg-[linear-gradient(45deg,#f8fafc,#eff6ff,#e0e7ff,#f1f5f9)] bg-[length:300%_300%]"
+      />
+
+      {/* Grid Animée (Défilement continu par dessus le gradient) */}
       <motion.div
         animate={{ x: [0, -48], y: [0, -48] }}
         transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-        className="absolute inset-[-50%] opacity-100"
+        className="absolute inset-[-50%] opacity-80"
         style={{
           backgroundImage: `
             linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
@@ -34,16 +41,16 @@ export default function InteractiveBackground() {
         }}
       />
 
-      {/* Interaction douce avec la souris */}
+      {/* Interactions douces avec la souris (Blobs) */}
       <motion.div
         animate={{ x: mousePos.x * 2, y: mousePos.y * 2 }}
         transition={{ type: "spring", stiffness: 30, damping: 30 }}
-        className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-400/10 rounded-full blur-[100px]"
+        className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[120px]"
       />
       <motion.div
         animate={{ x: mousePos.x * -2, y: mousePos.y * -2 }}
         transition={{ type: "spring", stiffness: 30, damping: 30 }}
-        className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-400/10 rounded-full blur-[100px]"
+        className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px]"
       />
     </div>
   );
