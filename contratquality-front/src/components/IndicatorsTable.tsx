@@ -6,7 +6,8 @@ import { IndicatorResult } from "@/types";
 import { 
   Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, 
   Star, Frown, MessageSquareWarning, Network, Crop, Zap, 
-  PieChart, Calculator, Settings2, Loader2, Database, TableProperties
+  PieChart, Calculator, Loader2, Database, TableProperties,
+  Wifi, PhoneCall, HardHat, ChevronsUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateBonus } from "@/services/api";
@@ -29,9 +30,8 @@ export default function IndicatorsTable({
 }: IndicatorsTableProps) {
   
   const [viewMode, setViewMode] = useState<'data' | 'bonus'>('data');
+  const [filterMode, setFilterMode] = useState<'ALL' | 'R1' | 'R2' | 'AUTRES'>('ALL');
 
-  const [globalConfig, setGlobalConfig] = useState({ bonusMin: "-2", bonusMax: "3", g29: "1", g44: "1", g45: "1", g46: "1" });
-  
   const [targets, setTargets] = useState<Record<string, { min: string; max: string; bMin?: string; bMax?: string }>>({
     "PLP-A": { min: "94", max: "99" }, "PLP-B": { min: "92", max: "98" }, "PLP-C": { min: "91", max: "98" },
     "Hotline-A": { min: "86", max: "93" }, "Hotline-B": { min: "79", max: "90" }, "Hotline-C": { min: "78", max: "85" },
@@ -77,13 +77,14 @@ export default function IndicatorsTable({
   useEffect(() => {
     if (viewMode !== 'bonus') return;
     
+    // G29, G44, G45, G46 cachés de l'UI et fixés à 1
     const payload = {
-      bonusMin: parseFloat(globalConfig.bonusMin) || 0,
-      bonusMax: parseFloat(globalConfig.bonusMax) || 0,
-      facteurG29: parseFloat(globalConfig.g29) || 1,
-      facteurG44: parseFloat(globalConfig.g44) || 1,
-      facteurG45: parseFloat(globalConfig.g45) || 1,
-      facteurG46: parseFloat(globalConfig.g46) || 1,
+      bonusMin: -2,
+      bonusMax: 3,
+      facteurG29: 1,
+      facteurG44: 1,
+      facteurG45: 1,
+      facteurG46: 1,
       targets: Object.fromEntries(
         Object.entries(targets).map(([key, val]) => [
           key, { 
@@ -109,7 +110,7 @@ export default function IndicatorsTable({
     }, 500);
 
     return () => clearTimeout(handler);
-  }, [globalConfig, targets, period, viewMode]);
+  }, [targets, period, viewMode]);
 
   const handleTargetChange = (id: string, field: string, value: string) => {
     setTargets(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
@@ -121,23 +122,21 @@ export default function IndicatorsTable({
     return { bar: "bg-rose-400", text: "text-rose-700", badge: "bg-rose-50 border-rose-200", dot: "bg-rose-500" };
   };
 
-  // Liste des indicateurs Rang 1 & 2
   const rowsDefBonus = [
-    { id: "PLP-A", cat: "Perf 1er RDV PLP", zone: "Zone A", type: "R1", act: "PLP", z: "A" },
-    { id: "PLP-B", cat: "Perf 1er RDV PLP", zone: "Zone B", type: "R1", act: "PLP", z: "B" },
-    { id: "PLP-C", cat: "Perf 1er RDV PLP", zone: "Zone C", type: "R1", act: "PLP", z: "C" },
-    { id: "Hotline-A", cat: "Perf 1er RDV HOTLINE", zone: "Zone A", type: "R1", act: "Hotline", z: "A" },
-    { id: "Hotline-B", cat: "Perf 1er RDV HOTLINE", zone: "Zone B", type: "R1", act: "Hotline", z: "B" },
-    { id: "Hotline-C", cat: "Perf 1er RDV HOTLINE", zone: "Zone C", type: "R1", act: "Hotline", z: "C" },
-    { id: "Construction-A", cat: "Perf 1er RDV Construction", zone: "Zone A", type: "R1", act: "Construction", z: "A" },
-    { id: "Construction-B", cat: "Perf 1er RDV Construction", zone: "Zone B", type: "R1", act: "Construction", z: "B" },
-    { id: "Construction-C", cat: "Perf 1er RDV Construction", zone: "Zone C", type: "R1", act: "Construction", z: "C" },
-    { id: "RANG2-A", cat: "Perf rang 2 et plus", zone: "Zone A", type: "R2", z: "A" },
-    { id: "RANG2-B", cat: "Perf rang 2 et plus", zone: "Zone B", type: "R2", z: "B" },
-    { id: "RANG2-C", cat: "Perf rang 2 et plus", zone: "Zone C", type: "R2", z: "C" },
+    { id: "PLP-A", cat: "Perf 1er RDV PLP", zone: "Zone A", type: "R1", act: "PLP", z: "A", icon: <Wifi size={14} className="text-blue-500" /> },
+    { id: "PLP-B", cat: "Perf 1er RDV PLP", zone: "Zone B", type: "R1", act: "PLP", z: "B", icon: <Wifi size={14} className="text-blue-500" /> },
+    { id: "PLP-C", cat: "Perf 1er RDV PLP", zone: "Zone C", type: "R1", act: "PLP", z: "C", icon: <Wifi size={14} className="text-blue-500" /> },
+    { id: "Hotline-A", cat: "Perf 1er RDV HOTLINE", zone: "Zone A", type: "R1", act: "Hotline", z: "A", icon: <PhoneCall size={14} className="text-blue-500" /> },
+    { id: "Hotline-B", cat: "Perf 1er RDV HOTLINE", zone: "Zone B", type: "R1", act: "Hotline", z: "B", icon: <PhoneCall size={14} className="text-blue-500" /> },
+    { id: "Hotline-C", cat: "Perf 1er RDV HOTLINE", zone: "Zone C", type: "R1", act: "Hotline", z: "C", icon: <PhoneCall size={14} className="text-blue-500" /> },
+    { id: "Construction-A", cat: "Perf 1er RDV Construction", zone: "Zone A", type: "R1", act: "Construction", z: "A", icon: <HardHat size={14} className="text-blue-500" /> },
+    { id: "Construction-B", cat: "Perf 1er RDV Construction", zone: "Zone B", type: "R1", act: "Construction", z: "B", icon: <HardHat size={14} className="text-blue-500" /> },
+    { id: "Construction-C", cat: "Perf 1er RDV Construction", zone: "Zone C", type: "R1", act: "Construction", z: "C", icon: <HardHat size={14} className="text-blue-500" /> },
+    { id: "RANG2-A", cat: "Perf rang 2 et plus", zone: "Zone A", type: "R2", z: "A", icon: <ChevronsUp size={14} className="text-indigo-500" /> },
+    { id: "RANG2-B", cat: "Perf rang 2 et plus", zone: "Zone B", type: "R2", z: "B", icon: <ChevronsUp size={14} className="text-indigo-500" /> },
+    { id: "RANG2-C", cat: "Perf rang 2 et plus", zone: "Zone C", type: "R2", z: "C", icon: <ChevronsUp size={14} className="text-indigo-500" /> },
   ];
 
-  // Configuration des autres indicateurs (TNH, SATCLI...) avec leurs icônes et couleurs
   const otherIndicatorsDef = [
     { id: "SATCLI_OK", cat: "Satcli (sur RDV OK)", stat: satcliOk, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", textClass: "text-teal-700", bgClass: "bg-teal-50", borderClass: "border-teal-200" },
     { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK) 4* et 5*", stat: satcliNok, icon: <Frown size={20} className="text-orange-400" />, colorClass: "bg-orange-500", textClass: "text-orange-700", bgClass: "bg-orange-50", borderClass: "border-orange-200" },
@@ -149,9 +148,9 @@ export default function IndicatorsTable({
   ];
 
   return (
-    <div className="w-full bg-white rounded-[1.5rem] shadow-[0_10px_40px_rgb(0,0,0,0.06)] border border-slate-200/80 overflow-hidden relative min-h-[600px]">
+    <div className="w-full bg-white rounded-[1.5rem] shadow-[0_10px_40px_rgb(0,0,0,0.06)] border border-slate-200 overflow-hidden relative min-h-[600px]">
       
-      {/* HEADER LUXE AVEC TOGGLE */}
+      {/* HEADER LUXE */}
       <div className="px-6 md:px-8 py-5 border-b border-slate-100 bg-white flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
         
         <div className="flex items-center gap-4">
@@ -167,7 +166,20 @@ export default function IndicatorsTable({
           </div>
         </div>
 
-        {/* TOGGLE SWITCH AVEC ICONES LUCIDE (NO EMOJIS) */}
+        {/* FILTRES PAR INDICATEURS */}
+        <div className="flex p-1 bg-slate-50 rounded-xl border border-slate-200/60 shadow-inner">
+          {['ALL', 'R1', 'R2', 'AUTRES'].map((f) => (
+            <button 
+              key={f}
+              onClick={() => setFilterMode(f as any)} 
+              className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300", filterMode === f ? "bg-white text-blue-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700")}
+            >
+              {f === 'ALL' ? 'Tous' : f === 'R1' ? 'Rang 1' : f === 'R2' ? 'Rang 2' : 'Autres KPI'}
+            </button>
+          ))}
+        </div>
+
+        {/* TOGGLE SWITCH DATA/BONUS */}
         <div className="flex p-1.5 bg-slate-100/80 rounded-xl border border-slate-200/60 shadow-inner">
           <button 
             onClick={() => setViewMode('data')} 
@@ -186,24 +198,6 @@ export default function IndicatorsTable({
             Simulation Bonus
           </button>
         </div>
-
-        {/* G-FACTORS (Affichés uniquement en mode bonus) */}
-        <AnimatePresence>
-          {viewMode === 'bonus' && (
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} 
-              className="flex flex-wrap items-center gap-4 bg-slate-50/80 px-5 py-3 rounded-xl border border-slate-200/80 shadow-sm"
-            >
-              <Settings2 size={18} className="text-slate-400" />
-              <div className="flex gap-5">
-                <div className="flex items-center"><span className="text-xs font-bold text-slate-500 mr-2">G29:</span><input type="number" step="0.01" value={globalConfig.g29} onChange={(e) => setGlobalConfig(p => ({ ...p, g29: e.target.value }))} className="w-12 bg-transparent border-b-2 border-slate-200 text-center font-black text-slate-800 focus:border-purple-500 focus:outline-none transition-colors" /></div>
-                <div className="flex items-center"><span className="text-xs font-bold text-slate-500 mr-2">G44:</span><input type="number" step="0.01" value={globalConfig.g44} onChange={(e) => setGlobalConfig(p => ({ ...p, g44: e.target.value }))} className="w-12 bg-transparent border-b-2 border-slate-200 text-center font-black text-slate-800 focus:border-purple-500 focus:outline-none transition-colors" /></div>
-                <div className="flex items-center"><span className="text-xs font-bold text-slate-500 mr-2">G45:</span><input type="number" step="0.01" value={globalConfig.g45} onChange={(e) => setGlobalConfig(p => ({ ...p, g45: e.target.value }))} className="w-12 bg-transparent border-b-2 border-slate-200 text-center font-black text-slate-800 focus:border-purple-500 focus:outline-none transition-colors" /></div>
-                <div className="flex items-center"><span className="text-xs font-bold text-slate-500 mr-2">G46:</span><input type="number" step="0.01" value={globalConfig.g46} onChange={(e) => setGlobalConfig(p => ({ ...p, g46: e.target.value }))} className="w-12 bg-transparent border-b-2 border-slate-200 text-center font-black text-slate-800 focus:border-purple-500 focus:outline-none transition-colors" /></div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
       
       {/* CONTAINER DES TABLES */}
@@ -224,66 +218,36 @@ export default function IndicatorsTable({
             </thead>
             <tbody className="bg-white">
               
-              {/* RANG 1 DATA */}
-              {rang1 && activities.map((activity, actIndex) => {
-                return zones.map((zone, zIndex) => {
-                  const stats = rang1[activity]?.[zone];
-                  if (!stats || (stats.num === 0 && stats.denum === 0)) return null;
-                  const percentValue = stats.resultat * 100;
-                  const styles = getScoreStyles(stats.resultat);
-                  
-                  return (
-                    <tr key={`R1-data-${activity}-${zone}`} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100/50">
-                      {actIndex === 0 && zIndex === 0 && (
-                        <td rowSpan={activities.length * zones.length} className="py-4 px-4 align-middle border-r border-slate-100 bg-[#f4f6f9]">
-                          <div className="flex flex-col items-center justify-center gap-5 py-10 px-3 rounded-2xl bg-slate-900 shadow-md">
-                            <Layers size={20} className="text-blue-400" />
-                            <span className="font-black text-sm text-white tracking-[0.2em] rotate-180 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>RANG 1</span>
-                          </div>
-                        </td>
-                      )}
-                      {zIndex === 0 && (
-                        <td rowSpan={zones.length} className="py-4 px-8 align-middle border-r border-slate-100 bg-white">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-lg border border-blue-100 shadow-sm">{activity.charAt(0)}</div>
-                            <span className="font-extrabold text-slate-800 text-[15px]">{activity}</span>
-                          </div>
-                        </td>
-                      )}
-                      <td className="py-4 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-600 font-bold text-xs border border-slate-200/60 shadow-sm">Zone {zone}</span></td>
-                      <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-800 text-[15px]">{stats.num}</td>
-                      <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-500 text-[15px]">{stats.denum}</td>
-                      <td className="py-4 px-6">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <span className={cn("px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2", styles.badge, styles.text)}><div className={cn("w-1.5 h-1.5 rounded-full", styles.dot)}></div>{formatPercent(stats.resultat)}</span>
-                          <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden"><div className={cn("h-full rounded-full transition-all duration-1000", styles.bar)} style={{ width: `${percentValue}%` }}></div></div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                });
-              })}
+              {/* RANG 1 & 2 DATA COMBINED LOOP */}
+              {(filterMode === 'ALL' || filterMode === 'R1' || filterMode === 'R2') && rowsDefBonus.map((row, index) => {
+                if (filterMode === 'R1' && row.type !== 'R1') return null;
+                if (filterMode === 'R2' && row.type !== 'R2') return null;
 
-              {/* RANG 2 DATA */}
-              {rang2 && zones.map((zone, zIndex) => {
-                const stats = rang2[zone];
+                let stats: IndicatorResult | undefined;
+                if (row.type === 'R1') stats = rang1?.[row.act]?.[row.z];
+                else stats = rang2?.[row.z];
+
                 if (!stats || (stats.num === 0 && stats.denum === 0)) return null;
                 const percentValue = stats.resultat * 100;
                 const styles = getScoreStyles(stats.resultat);
-
+                
                 return (
-                  <tr key={`R2-data-${zone}`} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100/50">
-                    {zIndex === 0 && (
-                      <td rowSpan={zones.length} className="py-4 px-4 align-middle border-r border-slate-100 bg-[#f4f6f9]">
-                        <div className="flex flex-col items-center justify-center gap-5 py-6 px-3 rounded-2xl bg-slate-800 shadow-md"><span className="font-black text-sm text-white tracking-[0.2em] rotate-180 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>RANG 2</span></div>
+                  <tr key={`data-${row.id}`} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100/50">
+                    {index % 3 === 0 && (
+                      <td rowSpan={3} className="py-4 px-4 align-middle border-r border-slate-100 bg-[#f4f6f9]">
+                        <div className="flex flex-col items-center justify-center gap-5 py-8 px-3 rounded-2xl bg-slate-900 shadow-md">
+                          <Layers size={20} className="text-blue-400" />
+                          <span className="font-black text-xs text-white tracking-[0.2em] rotate-180 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>{row.type === 'R1' ? 'RANG 1' : 'RANG 2'}</span>
+                        </div>
                       </td>
                     )}
-                    {zIndex === 0 && (
-                      <td rowSpan={zones.length} className="py-4 px-8 align-middle border-r border-slate-100 bg-white">
-                        <div className="flex items-center justify-center p-3 border border-dashed border-slate-300 rounded-xl bg-slate-50 text-slate-500 font-bold text-sm">Toutes Activités</div>
-                      </td>
-                    )}
-                    <td className="py-4 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-600 font-bold text-xs border border-slate-200/60 shadow-sm">Zone {zone}</span></td>
+                    <td className="py-4 px-8 align-middle border-r border-slate-100 bg-white">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 shadow-sm">{row.icon}</div>
+                        <span className="font-extrabold text-slate-800 text-[13px]">{row.cat}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-600 font-bold text-xs border border-slate-200/60 shadow-sm">Zone {row.zone.replace('Zone ', '')}</span></td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-800 text-[15px]">{stats.num}</td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-500 text-[15px]">{stats.denum}</td>
                     <td className="py-4 px-6">
@@ -296,8 +260,8 @@ export default function IndicatorsTable({
                 );
               })}
 
-              {/* AUTRES INDICATEURS DATA AVEC LEURS ICONES */}
-              {otherIndicatorsDef.map((row) => {
+              {/* AUTRES INDICATEURS DATA */}
+              {(filterMode === 'ALL' || filterMode === 'AUTRES') && otherIndicatorsDef.map((row) => {
                 const stats = row.stat;
                 if (!stats || (stats.num === 0 && stats.denum === 0)) return null;
                 const percentValue = stats.resultat * 100;
@@ -307,11 +271,11 @@ export default function IndicatorsTable({
                     <td className="py-4 px-4 align-middle border-r border-slate-100 bg-[#f4f6f9]">
                       <div className="flex flex-col items-center justify-center gap-4 py-6 px-3 rounded-2xl bg-slate-900 shadow-md">
                         {row.icon}
-                        <span className="font-black text-xs text-white tracking-[0.2em] rotate-180 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>{row.id.replace('_', ' ')}</span>
+                        <span className="font-black text-[10px] text-white tracking-[0.2em] rotate-180 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>{row.id.replace('_', ' ')}</span>
                       </div>
                     </td>
                     <td className="py-4 px-8 align-middle border-r border-slate-100">
-                      <span className="font-extrabold text-slate-700 text-[14px]">{row.cat}</span>
+                      <span className="font-extrabold text-slate-700 text-[13px]">{row.cat}</span>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-400 font-bold text-xs border border-slate-200/60">Global</span></td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 font-black text-slate-800 text-[15px]">{stats.num}</td>
@@ -351,8 +315,11 @@ export default function IndicatorsTable({
             </thead>
             <tbody className="bg-white">
               
-              {/* Lignes Rang 1 et 2 BONUS */}
-              {rowsDefBonus.map((row, index) => {
+              {/* RANG 1 & 2 BONUS */}
+              {(filterMode === 'ALL' || filterMode === 'R1' || filterMode === 'R2') && rowsDefBonus.map((row, index) => {
+                if (filterMode === 'R1' && row.type !== 'R1') return null;
+                if (filterMode === 'R2' && row.type !== 'R2') return null;
+
                 let localStat: IndicatorResult | undefined;
                 let pdm = 0;
                 if (row.type === "R1") {
@@ -364,7 +331,6 @@ export default function IndicatorsTable({
                 }
 
                 if (!localStat || (localStat.num === 0 && localStat.denum === 0)) return null;
-
                 const resultat = localStat.resultat;
                 const bonus = bonusResults[row.id]?.bonusCalcule ?? bonusResults[row.id]?.bonus_calcule ?? 0;
 
@@ -375,7 +341,7 @@ export default function IndicatorsTable({
                         <span className="font-extrabold text-slate-700 text-[13px]">{row.cat}</span>
                       </td>
                     )}
-                    <td className="py-3 px-4 text-center border-r border-slate-100 bg-white"><span className="font-bold text-slate-500 text-xs">{row.zone}</span></td>
+                    <td className="py-3 px-4 text-center border-r border-slate-100 bg-white"><span className="font-bold text-slate-500 text-xs">{row.zone.replace('Zone ', '')}</span></td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white"><span className="font-black text-slate-800 text-[14px]">{formatPercent(resultat)}</span></td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/10"><span className="font-bold text-blue-600 text-xs">{formatPercent(pdm)}</span></td>
                     
@@ -390,34 +356,12 @@ export default function IndicatorsTable({
                       </div>
                     </td>
 
-                    {/* Rowspan Global pour RANG 1 et 2 (Bonus Min & Max) */}
-                    {index === 0 && (
-                      <td rowSpan={12} className="py-3 px-6 align-middle border-r border-slate-100 bg-slate-50/40">
-                        <div className="flex items-center justify-center">
-                          <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-xl px-2 py-1.5 shadow-sm">
-                            <input type="number" step="0.1" value={globalConfig.bonusMin} onChange={(e) => setGlobalConfig(prev => ({ ...prev, bonusMin: e.target.value }))} className="w-10 bg-transparent text-right outline-none font-black text-rose-600 text-sm" />
-                            <span className="text-rose-400 font-bold text-[10px] ml-0.5">%</span>
-                          </div>
-                        </div>
-                      </td>
-                    )}
-                    {index === 0 && (
-                      <td rowSpan={12} className="py-3 px-6 align-middle border-r border-slate-100 bg-slate-50/40">
-                        <div className="flex items-center justify-center">
-                          <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-xl px-2 py-1.5 shadow-sm">
-                            <input type="number" step="0.1" value={globalConfig.bonusMax} onChange={(e) => setGlobalConfig(prev => ({ ...prev, bonusMax: e.target.value }))} className="w-10 bg-transparent text-right outline-none font-black text-emerald-600 text-sm" />
-                            <span className="text-emerald-400 font-bold text-[10px] ml-0.5">%</span>
-                          </div>
-                        </div>
-                      </td>
-                    )}
+                    {/* On cache les min/max individuel ici pour R1 et R2 car ils utilisent le global (invisible dans UI mais appliqué) */}
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/40"><span className="font-bold text-slate-400 text-xs">-2%</span></td>
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/40"><span className="font-bold text-slate-400 text-xs">3%</span></td>
 
                     <td className="py-3 px-6 text-center bg-emerald-50/20 group-hover:bg-emerald-50/40 transition-colors">
-                      <div className={cn(
-                        "inline-flex items-center justify-center px-4 py-1.5 rounded-lg font-black text-[14px] border shadow-sm w-24",
-                        bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : 
-                        bonus < 0 ? "bg-rose-100 text-rose-800 border-rose-200" : "bg-slate-100 text-slate-600 border-slate-200"
-                      )}>
+                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-lg font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : bonus < 0 ? "bg-rose-100 text-rose-800 border-rose-200" : "bg-slate-100 text-slate-600 border-slate-200")}>
                         {bonus > 0 ? "+" : ""}{formatPercent(bonus)}
                       </div>
                     </td>
@@ -425,8 +369,8 @@ export default function IndicatorsTable({
                 );
               })}
 
-              {/* Lignes pour les autres indicateurs BONUS */}
-              {otherIndicatorsDef.map((row) => {
+              {/* AUTRES INDICATEURS BONUS */}
+              {(filterMode === 'ALL' || filterMode === 'AUTRES') && otherIndicatorsDef.map((row) => {
                 const stat = row.stat;
                 if (!stat || (stat.num === 0 && stat.denum === 0)) return null;
 

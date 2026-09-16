@@ -27,9 +27,9 @@ export default function Home() {
   const hasData = !!reportData && Object.keys(reportData).length > 0;
 
   return (
-    <main className="min-h-screen relative font-sans selection:bg-blue-100 bg-[#fafcff]">
+    <main className="min-h-screen relative font-sans selection:bg-blue-100 bg-transparent">
       
-      {/* Subtle Luxury Grid Background */}
+      {/* Background interactif Luxe (avec la grille qui "respire") */}
       <InteractiveBackground />
 
       <div className="max-w-7xl mx-auto space-y-12 relative z-10 p-6 md:p-12">
@@ -62,11 +62,12 @@ export default function Home() {
           </FadeIn>
         )}
 
+        {/* Uploads Grid - M9ada parfaitement l 6 boxes */}
         <SlideUp delay={0.2} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <FileUpload 
             title="Import RANG & TNH"
             description="Fichier source (PLP, Constru, Hotline)"
-            icon={<FileSpreadsheet size={36} className="text-blue-500" strokeWidth={1.5} />}
+            icon={<FileSpreadsheet size={32} className="text-blue-600" strokeWidth={1.5} />}
             uploadAction={(file) => uploadRangFile(file, period)}
             onUploadSuccess={handleSuccess}
             onUploadError={setError}
@@ -74,7 +75,7 @@ export default function Home() {
           <FileUpload 
             title="Import SATCLI"
             description="Indicateurs OK & NOK"
-            icon={<Star size={36} className="text-teal-500" strokeWidth={1.5} />}
+            icon={<Star size={32} className="text-teal-600" strokeWidth={1.5} />}
             uploadAction={(file) => uploadSatcliFile(file, period)}
             onUploadSuccess={handleSuccess}
             onUploadError={setError}
@@ -82,7 +83,7 @@ export default function Home() {
           <FileUpload 
             title="Import Taux Plainte"
             description="Volume ticket qualité"
-            icon={<Frown size={36} className="text-rose-500" strokeWidth={1.5} />}
+            icon={<Frown size={32} className="text-rose-600" strokeWidth={1.5} />}
             uploadAction={(file) => uploadPlainteFile(file, period)}
             onUploadSuccess={handleSuccess}
             onUploadError={setError}
@@ -90,7 +91,7 @@ export default function Home() {
           <FileUpload 
             title="Import PTO"
             description="Incohérence PTO"
-            icon={<Network size={36} className="text-pink-500" strokeWidth={1.5} />}
+            icon={<Network size={32} className="text-pink-600" strokeWidth={1.5} />}
             uploadAction={(file) => uploadPtoFile(file, period)}
             onUploadSuccess={handleSuccess}
             onUploadError={setError}
@@ -98,7 +99,7 @@ export default function Home() {
           <FileUpload 
             title="Import Cadrage"
             description="Analyse des MAL_CADREE"
-            icon={<Crop size={36} className="text-indigo-500" strokeWidth={1.5} />}
+            icon={<Crop size={32} className="text-indigo-600" strokeWidth={1.5} />}
             uploadAction={(file) => uploadCadrageFile(file, period)}
             onUploadSuccess={handleSuccess}
             onUploadError={setError}
@@ -106,7 +107,7 @@ export default function Home() {
           <FileUpload 
             title="Import GEM NOK"
             description="Analyse TVC et Flg Gem"
-            icon={<Zap size={36} className="text-cyan-500" strokeWidth={1.5} />}
+            icon={<Zap size={32} className="text-cyan-600" strokeWidth={1.5} />}
             uploadAction={(file) => uploadGemNokFile(file, period)}
             onUploadSuccess={handleSuccess}
             onUploadError={setError}
