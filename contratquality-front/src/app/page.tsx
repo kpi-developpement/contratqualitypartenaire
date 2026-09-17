@@ -56,7 +56,7 @@ export default function Home() {
               />
             </div>
 
-            {/* Toggle Category RACC / SAV (iOS Style Segmented Control) */}
+            {/* Toggle Category RACC / SAV (iOS Style) */}
             <div className="flex p-1 bg-white rounded-full border border-slate-200 shadow-sm">
               <button 
                 onClick={() => setCategory('RACC')} 
@@ -74,7 +74,6 @@ export default function Home() {
               </button>
             </div>
           </div>
-
         </FadeIn>
 
         {error && (
@@ -116,6 +115,7 @@ export default function Home() {
 
         {hasData && (
           <SlideUp delay={0.1} className="pt-8">
+            {/* L'FIX HNA: Kan-passi category w reportData l'Component */}
             <IndicatorsTable 
               period={period}
               category={category}
