@@ -87,19 +87,19 @@ export default function Home() {
         <div className="min-h-[250px]">
           <AnimatePresence mode="wait">
             {category === 'RACC' ? (
-              <motion.div key="racc-uploads" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <FileUpload title="RANG & TNH" description="Source principale" icon={<FileSpreadsheet size={28} className="text-blue-600" strokeWidth={2} />} uploadAction={(file) => uploadRangFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
-                <FileUpload title="SATCLI" description="OK & NOK" icon={<Star size={28} className="text-teal-600" strokeWidth={2} />} uploadAction={(file) => uploadSatcliFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
-                <FileUpload title="Taux Plainte" description="Volume ticket qualité" icon={<Frown size={28} className="text-rose-600" strokeWidth={2} />} uploadAction={(file) => uploadPlainteFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
-                <FileUpload title="PTO" description="Incohérence PTO" icon={<Network size={28} className="text-pink-600" strokeWidth={2} />} uploadAction={(file) => uploadPtoFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
-                <FileUpload title="Cadrage" description="Analyse MAL_CADREE" icon={<Crop size={28} className="text-indigo-600" strokeWidth={2} />} uploadAction={(file) => uploadCadrageFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
-                <FileUpload title="GEM NOK" description="TVC et Flg Gem" icon={<Zap size={28} className="text-cyan-600" strokeWidth={2} />} uploadAction={(file) => uploadGemNokFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
-                <FileUpload title="AUDIT" description="Délai 90ème Centile" icon={<ClipboardCheck size={28} className="text-fuchsia-600" strokeWidth={2} />} uploadAction={(file) => uploadAuditFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
-                <FileUpload title="REE" description="Délai 90ème Centile" icon={<Timer size={28} className="text-emerald-600" strokeWidth={2} />} uploadAction={(file) => uploadReeFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+              <motion.div key="racc-uploads" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <FileUpload title="Import RANG & TNH" description="Fichier source (PLP, Constru, Hotline)" icon={<FileSpreadsheet size={32} className="text-blue-600" strokeWidth={1.5} />} uploadAction={(file) => uploadRangFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+                <FileUpload title="Import SATCLI" description="Indicateurs OK & NOK" icon={<Star size={32} className="text-teal-600" strokeWidth={1.5} />} uploadAction={(file) => uploadSatcliFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+                <FileUpload title="Import Taux Plainte" description="Volume ticket qualité" icon={<Frown size={32} className="text-rose-600" strokeWidth={1.5} />} uploadAction={(file) => uploadPlainteFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+                <FileUpload title="Import PTO" description="Incohérence PTO" icon={<Network size={32} className="text-pink-600" strokeWidth={1.5} />} uploadAction={(file) => uploadPtoFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+                <FileUpload title="Import Cadrage" description="Analyse des MAL_CADREE" icon={<Crop size={32} className="text-indigo-600" strokeWidth={1.5} />} uploadAction={(file) => uploadCadrageFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+                <FileUpload title="Import GEM NOK" description="Analyse TVC et Flg Gem" icon={<Zap size={32} className="text-cyan-600" strokeWidth={1.5} />} uploadAction={(file) => uploadGemNokFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
               </motion.div>
             ) : (
-              <motion.div key="sav-uploads" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex justify-center max-w-lg mx-auto">
-                <FileUpload title="Fichier SAV" description="SATCLI, TNH, SECU, PERF, CCR" icon={<Wrench size={32} className="text-purple-600" strokeWidth={2} />} uploadAction={(file) => uploadSavFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+              <motion.div key="sav-uploads" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FileUpload title="Fichier SAV" description="SATCLI, TNH, SECU, PERF, CCR" icon={<Wrench size={32} className="text-purple-600" strokeWidth={1.5} />} uploadAction={(file) => uploadSavFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+                <FileUpload title="Import AUDIT" description="Délai 90ème Centile" icon={<ClipboardCheck size={32} className="text-fuchsia-600" strokeWidth={1.5} />} uploadAction={(file) => uploadAuditFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+                <FileUpload title="Import REE" description="REE 90ème Centile" icon={<Timer size={32} className="text-emerald-600" strokeWidth={1.5} />} uploadAction={(file) => uploadReeFile(file, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -110,7 +110,7 @@ export default function Home() {
             <IndicatorsTable 
               period={period}
               category={category}
-              reportData={reportData}
+              reportData={reportData!}
             />
           </SlideUp>
         )}
