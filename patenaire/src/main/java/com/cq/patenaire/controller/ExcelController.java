@@ -31,39 +31,31 @@ public class ExcelController {
     }
 
     @PostMapping("/upload/rang")
-    public ResponseEntity<?> uploadRangFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
-        return handleUpload(file, period, "RANG");
-    }
+    public ResponseEntity<?> uploadRangFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "RANG"); }
 
     @PostMapping("/upload/satcli")
-    public ResponseEntity<?> uploadSatcliFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
-        return handleUpload(file, period, "SATCLI");
-    }
+    public ResponseEntity<?> uploadSatcliFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "SATCLI"); }
 
     @PostMapping("/upload/plainte")
-    public ResponseEntity<?> uploadPlainteFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
-        return handleUpload(file, period, "PLAINTE");
-    }
+    public ResponseEntity<?> uploadPlainteFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "PLAINTE"); }
 
     @PostMapping("/upload/pto")
-    public ResponseEntity<?> uploadPtoFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
-        return handleUpload(file, period, "PTO");
-    }
+    public ResponseEntity<?> uploadPtoFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "PTO"); }
 
     @PostMapping("/upload/cadrage")
-    public ResponseEntity<?> uploadCadrageFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
-        return handleUpload(file, period, "CADRAGE");
-    }
+    public ResponseEntity<?> uploadCadrageFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "CADRAGE"); }
 
     @PostMapping("/upload/gemnok")
-    public ResponseEntity<?> uploadGemNokFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
-        return handleUpload(file, period, "GEM_NOK");
-    }
+    public ResponseEntity<?> uploadGemNokFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "GEM_NOK"); }
+
+    @PostMapping("/upload/audit")
+    public ResponseEntity<?> uploadAuditFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "AUDIT"); }
+
+    @PostMapping("/upload/ree")
+    public ResponseEntity<?> uploadReeFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "REE"); }
 
     @PostMapping("/upload/sav")
-    public ResponseEntity<?> uploadSavFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
-        return handleUpload(file, period, "SAV");
-    }
+    public ResponseEntity<?> uploadSavFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "SAV"); }
 
     private ResponseEntity<?> handleUpload(MultipartFile file, String period, String type) {
         if (file.isEmpty() || period == null || period.trim().isEmpty()) {
@@ -79,6 +71,8 @@ public class ExcelController {
             else if ("PLAINTE".equals(type)) result = excelProcessingService.processPlainteFile(file, period);
             else if ("PTO".equals(type)) result = excelProcessingService.processPtoFile(file, period);
             else if ("GEM_NOK".equals(type)) result = excelProcessingService.processGemNokFile(file, period);
+            else if ("AUDIT".equals(type)) result = excelProcessingService.processAuditFile(file, period);
+            else if ("REE".equals(type)) result = excelProcessingService.processReeFile(file, period);
             else if ("SAV".equals(type)) result = excelProcessingService.processSavFile(file, period);
             else result = excelProcessingService.processCadrageFile(file, period);
 

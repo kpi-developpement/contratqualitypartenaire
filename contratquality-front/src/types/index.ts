@@ -16,6 +16,8 @@ export interface ReportResponse {
   incoherence_pto?: IndicatorResult;
   cadrage?: IndicatorResult;
   gem_nok?: IndicatorResult;
+  audit?: IndicatorResult;
+  ree?: IndicatorResult;
 
   sav_satcli?: IndicatorResult;
   sav_securisation?: IndicatorResult;

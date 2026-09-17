@@ -54,6 +54,14 @@ public class MonthlyReport {
     @Column(columnDefinition = "jsonb")
     private IndicatorResult gemNok;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult audit;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult ree;
+
     // ================= SAV =================
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
@@ -101,6 +109,8 @@ public class MonthlyReport {
         this.incoherencePto = new IndicatorResult(0, 0, 0.0);
         this.cadrage = new IndicatorResult(0, 0, 0.0);
         this.gemNok = new IndicatorResult(0, 0, 0.0);
+        this.audit = new IndicatorResult(0, 0, 0.0);
+        this.ree = new IndicatorResult(0, 0, 0.0);
 
         this.savSatcli = new IndicatorResult(0, 0, 0.0);
         this.savSecurisation = new IndicatorResult(0, 0, 0.0);

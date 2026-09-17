@@ -32,6 +32,8 @@ export const uploadPlainteFile = (file: File, period: string) => uploadGeneric("
 export const uploadPtoFile = (file: File, period: string) => uploadGeneric("pto", file, period);
 export const uploadCadrageFile = (file: File, period: string) => uploadGeneric("cadrage", file, period);
 export const uploadGemNokFile = (file: File, period: string) => uploadGeneric("gemnok", file, period);
+export const uploadAuditFile = (file: File, period: string) => uploadGeneric("audit", file, period);
+export const uploadReeFile = (file: File, period: string) => uploadGeneric("ree", file, period);
 export const uploadSavFile = (file: File, period: string) => uploadGeneric("sav", file, period);
 
 export const calculateBonus = async (period: string, configPayload: any) => {

@@ -55,19 +55,17 @@ public class BonusCalculationService {
 
             double bonus = 0.0;
 
-            // Logique de Bonus unifiée
             if (indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline") || indicatorId.startsWith("RANG2")) {
                 if (resultat <= tMin) bonus = bMin * pdm;
                 else if (resultat >= tMax) bonus = bMax * pdm;
                 else if (tMax != tMin) bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * pdm;
             }
             else if (indicatorId.equals("SATCLI_OK") || indicatorId.equals("SATCLI_NOK") || indicatorId.equals("SAV_SATCLI") || indicatorId.equals("SAV_SECURISATION") || indicatorId.equals("SAV_PERF")) {
-                // Higher is better
                 if (resultat <= tMin) bonus = bMin;
                 else if (resultat >= tMax) bonus = bMax;
                 else if (tMax != tMin) bonus = ((resultat - tMin) / (tMax - tMin)) * bMax;
             }
-            else if (indicatorId.equals("PLAINTE") || indicatorId.equals("TNH") || indicatorId.equals("CADRAGE") || indicatorId.equals("INCOHERENCE_PTO") || indicatorId.equals("SAV_TNH") || indicatorId.equals("SAV_CCR")) {
+            else if (indicatorId.equals("PLAINTE") || indicatorId.equals("TNH") || indicatorId.equals("CADRAGE") || indicatorId.equals("INCOHERENCE_PTO") || indicatorId.equals("SAV_TNH") || indicatorId.equals("SAV_CCR") || indicatorId.equals("AUDIT") || indicatorId.equals("REE")) {
                 // Lower is better (Inverted)
                 if (resultat >= tMin) bonus = bMin;
                 else if (resultat <= tMax) bonus = bMax;
@@ -121,6 +119,8 @@ public class BonusCalculationService {
                 case "TNH": return report.getTnh();
                 case "CADRAGE": return report.getCadrage();
                 case "INCOHERENCE_PTO": return report.getIncoherencePto();
+                case "AUDIT": return report.getAudit();
+                case "REE": return report.getRee();
 
                 // SAV
                 case "SAV_SATCLI": return report.getSavSatcli();

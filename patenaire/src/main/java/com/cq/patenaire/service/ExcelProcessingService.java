@@ -27,10 +27,6 @@ public class ExcelProcessingService {
         this.repository = repository;
     }
 
-    // ==========================================
-    // MÉTHODES DE TRAITEMENT
-    // ==========================================
-
     public MonthlyReport getReportByPeriod(String period) {
         return repository.findById(period).orElse(new MonthlyReport(period));
     }
@@ -39,7 +35,10 @@ public class ExcelProcessingService {
         return repository.findById(period).orElseGet(() -> new MonthlyReport(period));
     }
 
-    // ----- RACC METHODS -----
+    // ==========================================
+    // MÉTHODES DE TRAITEMENT RACC
+    // ==========================================
+
     public MonthlyReport processRangFile(MultipartFile file, String period) throws Exception {
         MonthlyReport report = getOrCreateReport(period);
         report.initDefaults();
@@ -145,11 +144,72 @@ public class ExcelProcessingService {
         return repository.save(report);
     }
 
-    // ----- SAV METHODS -----
+    // ==========================================
+    // NOUVEAU: AUDIT ET REE (Méthode Centile)
+    // ==========================================
+    public MonthlyReport processAuditFile(MultipartFile file, String period) throws Exception {
+        MonthlyReport report = getOrCreateReport(period);
+        List<Double> values = new ArrayList<>();
+
+        processGenericFile(file, record -> {
+            String valStr = getFlexibleRecord(record, "percentile délai traitement mainteneur");
+            if (valStr != null && !valStr.trim().isEmpty()) {
+                try {
+                    values.add(Double.parseDouble(valStr.trim().replace(",", ".")));
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+
+        double percentile = calculate90thPercentile(values);
+        // On utilise denum pour stocker le total des lignes à titre informatif
+        report.setAudit(new IndicatorResult(0, values.size(), percentile));
+        calculateFinalResults(report);
+        return repository.save(report);
+    }
+
+    public MonthlyReport processReeFile(MultipartFile file, String period) throws Exception {
+        MonthlyReport report = getOrCreateReport(period);
+        List<Double> values = new ArrayList<>();
+
+        processGenericFile(file, record -> {
+            String valStr = getFlexibleRecord(record, "percentile délai traitement mainteneur");
+            if (valStr != null && !valStr.trim().isEmpty()) {
+                try {
+                    values.add(Double.parseDouble(valStr.trim().replace(",", ".")));
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+
+        double percentile = calculate90thPercentile(values);
+        report.setRee(new IndicatorResult(0, values.size(), percentile));
+        calculateFinalResults(report);
+        return repository.save(report);
+    }
+
+    // Formule exacte du Percentile (CENTILE.INC) de Excel
+    private double calculate90thPercentile(List<Double> values) {
+        if (values == null || values.isEmpty()) return 0.0;
+        Collections.sort(values);
+        int n = values.size();
+        if (n == 1) return values.get(0);
+
+        double index = 0.9 * (n - 1);
+        int lower = (int) Math.floor(index);
+        int upper = (int) Math.ceil(index);
+
+        if (lower == upper) return values.get(lower);
+
+        double weight = index - lower;
+        return values.get(lower) + weight * (values.get(upper) - values.get(lower));
+    }
+
+
+    // ==========================================
+    // PROCESS SAV
+    // ==========================================
     public MonthlyReport processSavFile(MultipartFile file, String period) throws Exception {
         MonthlyReport report = getOrCreateReport(period);
 
-        // Reset SAV stats
         report.setSavSatcli(new IndicatorResult(0, 0, 0.0));
         report.setSavSecurisation(new IndicatorResult(0, 0, 0.0));
         report.setSavTnh(new IndicatorResult(0, 0, 0.0));
@@ -157,15 +217,12 @@ public class ExcelProcessingService {
         report.setSavPerf(new IndicatorResult(0, 0, 0.0));
 
         processGenericFile(file, record -> {
-
-            // Extraction flexible des colonnes (Excel met souvent des espaces ou caractères cachés)
             String noteSatcli = getFlexibleRecord(record, "note satcli ftth");
             String flagSecu = getFlexibleRecord(record, "flag_secu_interv_cq2024");
             String statutInterv = getFlexibleRecord(record, "statut intervention");
             String codCltrMain = getFlexibleRecord(record, "cod cltr main");
-            String poidsCcr = getFlexibleRecord(record, "poids ccr"); // Substring check for [CONTRAT_QUALITE_2025] Poids CCR
+            String poidsCcr = getFlexibleRecord(record, "poids ccr");
 
-            // 1. SATCLI SAV
             if (noteSatcli != null && !noteSatcli.trim().isEmpty()) {
                 String note = noteSatcli.trim();
                 if (Arrays.asList("1", "1.0", "2", "2.0", "3", "3.0", "4", "4.0", "5", "5.0").contains(note)) {
@@ -176,7 +233,6 @@ public class ExcelProcessingService {
                 }
             }
 
-            // 2. SECURISATION SAV
             if (flagSecu != null && !flagSecu.trim().isEmpty()) {
                 String flag = flagSecu.trim();
                 if (Arrays.asList("0", "0.0", "1", "1.0").contains(flag)) {
@@ -187,25 +243,20 @@ public class ExcelProcessingService {
                 }
             }
 
-            // 3. TNH SAV & 5. PERF SAV (Both rely on Statut Intervention for Denum)
             if (statutInterv != null && !statutInterv.trim().isEmpty()) {
                 String statut = statutInterv.trim();
-
-                // TNH
                 report.getSavTnh().setDenum(report.getSavTnh().getDenum() + 1);
                 String cod = codCltrMain != null ? codCltrMain.trim().toUpperCase() : "";
                 if ("INR2B".equals(cod) || "INR2C".equals(cod)) {
                     report.getSavTnh().setNum(report.getSavTnh().getNum() + 1);
                 }
 
-                // PERF
                 report.getSavPerf().setDenum(report.getSavPerf().getDenum() + 1);
                 if ("TERMINEE_OK".equalsIgnoreCase(statut)) {
                     report.getSavPerf().setNum(report.getSavPerf().getNum() + 1);
                 }
             }
 
-            // 4. CCR SAV
             if (poidsCcr != null && !poidsCcr.trim().isEmpty()) {
                 String poids = poidsCcr.trim();
                 if (Arrays.asList("0", "0.0", "3", "3.0").contains(poids)) {
@@ -215,21 +266,19 @@ public class ExcelProcessingService {
                     }
                 }
             }
-
         });
 
         calculateFinalResults(report);
         return repository.save(report);
     }
 
+
     // ==========================================
     // HELPERS LOGIC
     // ==========================================
     private String getFlexibleRecord(Map<String, String> recordMap, String keyword) {
         for (String key : recordMap.keySet()) {
-            if (key.contains(keyword)) {
-                return recordMap.get(key);
-            }
+            if (key.contains(keyword)) return recordMap.get(key);
         }
         return null;
     }
@@ -305,7 +354,8 @@ public class ExcelProcessingService {
         if (report.getCadrage() != null) report.getCadrage().calculateResult();
         if (report.getGemNok() != null) report.getGemNok().calculateResult();
 
-        // SAV
+        // On ne fait PAS .calculateResult() pour Audit et REE (pour ne pas écraser le percentile)
+
         if (report.getSavSatcli() != null) report.getSavSatcli().calculateResult();
         if (report.getSavSecurisation() != null) report.getSavSecurisation().calculateResult();
         if (report.getSavTnh() != null) report.getSavTnh().calculateResult();
@@ -322,7 +372,7 @@ public class ExcelProcessingService {
     }
 
     // ==========================================
-    // GENERIC FILE PARSER (CSV / EXCEL)
+    // GENERIC FILE PARSER
     // ==========================================
     private interface RecordProcessor {
         void process(Map<String, String> recordMap);
