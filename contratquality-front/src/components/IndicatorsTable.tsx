@@ -7,7 +7,7 @@ import {
   Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, 
   Star, Frown, MessageSquareWarning, Network, Crop, Zap, 
   PieChart, Calculator, Database, TableProperties,
-  Wifi, PhoneCall, HardHat, ChevronsUp, ShieldCheck, FileCheck, CheckCircle2, ClipboardCheck, Timer
+  Wifi, PhoneCall, HardHat, ChevronsUp, ShieldCheck, FileCheck, CheckCircle2, ClipboardCheck, Timer, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateBonus } from "@/services/api";
@@ -16,9 +16,20 @@ interface IndicatorsTableProps {
   period: string;
   category: 'RACC' | 'SAV';
   reportData: ReportResponse;
+  rang1?: Record<string, Record<string, IndicatorResult>>;
+  rang2?: Record<string, IndicatorResult>;
+  tnh?: IndicatorResult;
+  satcliOk?: IndicatorResult;
+  satcliNok?: IndicatorResult;
+  tauxPlainte?: IndicatorResult;
+  incoherencePto?: IndicatorResult;
+  cadrage?: IndicatorResult;
+  gemNok?: IndicatorResult;
 }
 
-export default function IndicatorsTable({ period, category, reportData }: IndicatorsTableProps) {
+export default function IndicatorsTable({ 
+  period, category, reportData, rang1, rang2, tnh, satcliOk, satcliNok, tauxPlainte, incoherencePto, cadrage, gemNok 
+}: IndicatorsTableProps) {
   
   const [viewMode, setViewMode] = useState<'data' | 'bonus'>('data');
   const [filterMode, setFilterMode] = useState<'ALL' | 'R1' | 'R2' | 'AUTRES'>('ALL');
@@ -50,23 +61,24 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
   const [bonusResults, setBonusResults] = useState<Record<string, any>>({});
   const [isCalculating, setIsCalculating] = useState(false);
 
+  const formatPercent = (value: number) => (value * 100).toFixed(2) + "%";
   const formatPercentOrRaw = (id: string, value: number) => {
     if (id === 'AUDIT' || id === 'REE') return value.toFixed(2);
     return (value * 100).toFixed(2) + "%";
   };
 
-  const rang1 = reportData.perf_rang1 || reportData.perf_rang_1 || reportData.perfRang1;
-  const rang2 = reportData.perf_rang2 || reportData.perf_rang_2 || reportData.perfRang2;
+  const activities = ["PLP", "Construction", "Hotline"];
+  const zones = ["A", "B", "C"];
 
   const totalDenumR1 = useMemo(() => {
     let sum = 0;
-    if (rang1) ["PLP", "Construction", "Hotline"].forEach(act => ["A", "B", "C"].forEach(z => sum += (rang1[act]?.[z]?.denum || 0)));
+    if (rang1) activities.forEach(act => zones.forEach(z => sum += (rang1[act]?.[z]?.denum || 0)));
     return sum;
   }, [rang1]);
 
   const totalDenumR2 = useMemo(() => {
     let sum = 0;
-    if (rang2) ["A", "B", "C"].forEach(z => sum += (rang2[z]?.denum || 0));
+    if (rang2) zones.forEach(z => sum += (rang2[z]?.denum || 0));
     return sum;
   }, [rang2]);
 
@@ -106,6 +118,13 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
     setTargets(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
 
+  const getScoreStyles = (value: number) => {
+    if (value >= 0.8) return { bar: "bg-emerald-400", text: "text-emerald-700", badge: "bg-emerald-50 border-emerald-200", dot: "bg-emerald-500" };
+    if (value >= 0.5) return { bar: "bg-amber-400", text: "text-amber-700", badge: "bg-amber-50 border-amber-200", dot: "bg-amber-500" };
+    return { bar: "bg-rose-400", text: "text-rose-700", badge: "bg-rose-50 border-rose-200", dot: "bg-rose-500" };
+  };
+
+  // ------------------ DÉFINITIONS DES LIGNES ------------------
   const rowsDefRaccR1R2 = [
     { id: "PLP-A", cat: "Perf 1er RDV PLP", zone: "Zone A", type: "R1", act: "PLP", z: "A", icon: <Wifi size={14} className="text-blue-500" /> },
     { id: "PLP-B", cat: "Perf 1er RDV PLP", zone: "Zone B", type: "R1", act: "PLP", z: "B", icon: <Wifi size={14} className="text-blue-500" /> },
@@ -122,27 +141,28 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
   ];
 
   const rowsDefRaccAutres = [
-    { id: "SATCLI_OK", cat: "Satcli (sur RDV OK)", stat: reportData.satcliOk || reportData.satcli_ok, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500" },
-    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: reportData.satcliNok || reportData.satcli_nok, icon: <Frown size={20} className="text-orange-400" />, colorClass: "bg-orange-500" },
-    { id: "PLAINTE", cat: "Taux de plainte", stat: reportData.tauxPlainte || reportData.taux_plainte, icon: <MessageSquareWarning size={20} className="text-rose-400" />, colorClass: "bg-rose-500" },
-    { id: "GEM_NOK", cat: "Transf. des GEM en TVC", stat: reportData.gemNok || reportData.gem_nok, icon: <Zap size={20} className="text-cyan-400" />, colorClass: "bg-cyan-500" },
-    { id: "TNH", cat: "Taux de RDV non honoré", stat: reportData.tnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500" },
-    { id: "CADRAGE", cat: "Conformité Cadrage", stat: reportData.cadrage, icon: <Crop size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500" },
-    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: reportData.incoherencePto || reportData.incoherence_pto, icon: <Network size={20} className="text-pink-400" />, colorClass: "bg-pink-500" },
-    { id: "AUDIT", cat: "Délai (90e Centile)", stat: reportData.audit, icon: <ClipboardCheck size={20} className="text-fuchsia-400" />, colorClass: "bg-fuchsia-500", isRaw: true },
-    { id: "REE", cat: "REE (90e Centile)", stat: reportData.ree, icon: <Timer size={20} className="text-emerald-400" />, colorClass: "bg-emerald-500", isRaw: true }
+    { id: "SATCLI_OK", cat: "Satcli (sur RDV OK)", stat: satcliOk, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, bar: "bg-teal-500", text: "text-teal-700", bg: "bg-teal-50", border: "border-teal-200" },
+    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: satcliNok, icon: <Frown size={20} className="text-orange-400" />, bar: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200" },
+    { id: "PLAINTE", cat: "Taux de plainte", stat: tauxPlainte, icon: <MessageSquareWarning size={20} className="text-rose-400" />, bar: "bg-rose-500", text: "text-rose-700", bg: "bg-rose-50", border: "border-rose-200" },
+    { id: "GEM_NOK", cat: "Transf. des GEM en TVC", stat: gemNok, icon: <Zap size={20} className="text-cyan-400" />, bar: "bg-cyan-500", text: "text-cyan-700", bg: "bg-cyan-50", border: "border-cyan-200" },
+    { id: "TNH", cat: "Taux de RDV non honoré", stat: tnh, icon: <AlertTriangle size={20} className="text-purple-400" />, bar: "bg-purple-500", text: "text-purple-700", bg: "bg-purple-50", border: "border-purple-200" },
+    { id: "CADRAGE", cat: "Conformité Cadrage", stat: cadrage, icon: <Crop size={20} className="text-indigo-400" />, bar: "bg-indigo-500", text: "text-indigo-700", bg: "bg-indigo-50", border: "border-indigo-200" },
+    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-pink-400" />, bar: "bg-pink-500", text: "text-pink-700", bg: "bg-pink-50", border: "border-pink-200" },
+    { id: "AUDIT", cat: "Délai (90e Centile)", stat: reportData?.audit, icon: <ClipboardCheck size={20} className="text-fuchsia-400" />, bar: "bg-fuchsia-500", text: "text-fuchsia-700", bg: "bg-fuchsia-50", border: "border-fuchsia-200", isRaw: true },
+    { id: "REE", cat: "REE (90e Centile)", stat: reportData?.ree, icon: <Timer size={20} className="text-emerald-400" />, bar: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", isRaw: true }
   ];
 
   const rowsDefSav = [
-    { id: "SAV_SATCLI", cat: "SAV - SATCLI", stat: reportData.savSatcli || reportData.sav_satcli, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500" },
-    { id: "SAV_SECURISATION", cat: "SAV - Sécurisation", stat: reportData.savSecurisation || reportData.sav_securisation, icon: <ShieldCheck size={20} className="text-blue-400" />, colorClass: "bg-blue-500" },
-    { id: "SAV_TNH", cat: "SAV - TNH", stat: reportData.savTnh || reportData.sav_tnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500" },
-    { id: "SAV_CCR", cat: "SAV - CCR", stat: reportData.savCcr || reportData.sav_ccr, icon: <FileCheck size={20} className="text-amber-400" />, colorClass: "bg-amber-500" },
-    { id: "SAV_PERF", cat: "SAV - Performance", stat: reportData.savPerf || reportData.sav_perf, icon: <CheckCircle2 size={20} className="text-emerald-400" />, colorClass: "bg-emerald-500" }
+    { id: "SAV_SATCLI", cat: "SAV - SATCLI", stat: reportData?.savSatcli || reportData?.sav_satcli, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, bar: "bg-teal-500", text: "text-teal-700", bg: "bg-teal-50", border: "border-teal-200" },
+    { id: "SAV_SECURISATION", cat: "SAV - Sécurisation", stat: reportData?.savSecurisation || reportData?.sav_securisation, icon: <ShieldCheck size={20} className="text-blue-400" />, bar: "bg-blue-500", text: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
+    { id: "SAV_TNH", cat: "SAV - TNH", stat: reportData?.savTnh || reportData?.sav_tnh, icon: <AlertTriangle size={20} className="text-purple-400" />, bar: "bg-purple-500", text: "text-purple-700", bg: "bg-purple-50", border: "border-purple-200" },
+    { id: "SAV_CCR", cat: "SAV - CCR", stat: reportData?.savCcr || reportData?.sav_ccr, icon: <FileCheck size={20} className="text-amber-400" />, bar: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" },
+    { id: "SAV_PERF", cat: "SAV - Performance", stat: reportData?.savPerf || reportData?.sav_perf, icon: <CheckCircle2 size={20} className="text-emerald-400" />, bar: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" }
   ];
 
   return (
     <div className="w-full bg-white rounded-[1.5rem] shadow-[0_10px_40px_rgb(0,0,0,0.06)] border border-slate-200/80 overflow-hidden relative min-h-[600px]">
+      
       <div className="px-6 md:px-8 py-5 border-b border-slate-100 bg-white flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
         <div className="flex items-center gap-4">
           <div className={cn("p-3.5 rounded-2xl shadow-sm border transition-colors", viewMode === 'data' ? "bg-slate-900 border-slate-800 text-white" : "bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-100 text-purple-600")}>
@@ -180,6 +200,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
       </div>
       
       <div className="overflow-x-auto relative">
+        
         {/* ======================= MODE DATA ======================= */}
         <div className={cn("transition-opacity duration-300", viewMode === 'data' ? "opacity-100 block" : "opacity-0 hidden")}>
           <table className="w-full text-sm text-left border-collapse min-w-[1000px]">
@@ -194,6 +215,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
               </tr>
             </thead>
             <tbody className="bg-white">
+              
               {category === 'RACC' && (filterMode === 'ALL' || filterMode === 'R1' || filterMode === 'R2') && rowsDefRaccR1R2.map((row, index) => {
                 if (filterMode === 'R1' && row.type !== 'R1') return null;
                 if (filterMode === 'R2' && row.type !== 'R2') return null;
@@ -203,6 +225,8 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                 else stats = rang2?.[row.z];
 
                 if (!stats || (stats.num === 0 && stats.denum === 0)) return null;
+                const percentValue = stats.resultat * 100;
+                const styles = getScoreStyles(stats.resultat);
                 
                 return (
                   <tr key={`data-${row.id}`} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100/50">
@@ -223,12 +247,10 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     <td className="py-4 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-600 font-bold text-xs border border-slate-200/60 shadow-sm">Zone {row.zone.replace('Zone ', '')}</span></td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-800 text-[15px]">{stats.num}</td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-500 text-[15px]">{stats.denum}</td>
-                    <td className="py-4 px-6 border-b border-slate-100">
+                    <td className="py-4 px-6">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <span className="px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 bg-slate-100 border-slate-200 text-slate-700">
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>{formatPercent(stats.resultat)}
-                        </span>
-                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1"><div className="h-full rounded-full transition-all duration-1000 bg-slate-400" style={{ width: `${stats.resultat * 100}%` }}></div></div>
+                        <span className={cn("px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2", styles.badge, styles.text)}><div className={cn("w-1.5 h-1.5 rounded-full", styles.dot)}></div>{formatPercent(stats.resultat)}</span>
+                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden"><div className={cn("h-full rounded-full transition-all duration-1000", styles.bar)} style={{ width: `${percentValue}%` }}></div></div>
                       </div>
                     </td>
                   </tr>
@@ -266,10 +288,10 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     
                     <td className="py-3 px-6">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <span className={cn("px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 shadow-sm", row.colorClass.replace('bg-', 'bg-opacity-10 border-').replace('500', '200'), row.colorClass.replace('bg-', 'text-').replace('500', '700'))}>
-                          <div className={cn("w-1.5 h-1.5 rounded-full", row.colorClass)}></div>{formatPercentOrRaw(row.id, stats.resultat)}
+                        <span className={cn("px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 shadow-sm", row.bg, row.border, row.text)}>
+                          <div className={cn("w-1.5 h-1.5 rounded-full", row.bar)}></div>{formatPercentOrRaw(row.id, stats.resultat)}
                         </span>
-                        {!row.isRaw && <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1"><div className={cn("h-full rounded-full transition-all duration-1000", row.colorClass)} style={{ width: `${stats.resultat * 100}%` }}></div></div>}
+                        {!row.isRaw && <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1"><div className={cn("h-full rounded-full transition-all duration-1000", row.bar)} style={{ width: `${stats.resultat * 100}%` }}></div></div>}
                       </div>
                     </td>
                   </tr>
@@ -334,12 +356,12 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/10"><span className="font-bold text-blue-600 text-xs">{formatPercent(pdm)}</span></td>
                     
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200 shadow-sm rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200 shadow-sm rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].min} onChange={(e) => handleTargetChange(row.id, 'min', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200 shadow-sm rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200 shadow-sm rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].max} onChange={(e) => handleTargetChange(row.id, 'max', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
@@ -348,7 +370,11 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/40"><span className="font-bold text-slate-400 text-xs">3%</span></td>
 
                     <td className="py-3 px-6 text-center bg-emerald-50/20 group-hover:bg-emerald-50/40 transition-colors">
-                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-lg font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : bonus < 0 ? "bg-rose-100 text-rose-800 border-rose-200" : "bg-slate-100 text-slate-600 border-slate-200")}>
+                      <div className={cn(
+                        "inline-flex items-center justify-center px-4 py-1.5 rounded-lg font-black text-[14px] border shadow-sm w-24",
+                        bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : 
+                        bonus < 0 ? "bg-rose-100 text-rose-800 border-rose-200" : "bg-slate-100 text-slate-600 border-slate-200"
+                      )}>
                         {bonus > 0 ? "+" : ""}{formatPercent(bonus)}
                       </div>
                     </td>
@@ -367,7 +393,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                   <tr key={`bonus-other-${row.id}`} className="hover:bg-slate-50/60 transition-colors border-b border-slate-100/60 bg-[#fbfcfd]">
                     <td className="py-4 px-6 align-middle border-r border-slate-100">
                       <div className="flex items-center gap-3">
-                        <div className={cn("p-1.5 rounded-lg border shadow-sm", row.colorClass.replace('bg-', 'bg-opacity-10 border-').replace('500', '200'))}>{row.icon}</div>
+                        <div className={cn("p-1.5 rounded-lg border shadow-sm", row.bg, row.border)}>{row.icon}</div>
                         <span className="font-extrabold text-slate-700 text-[13px]">{row.cat}</span>
                       </div>
                     </td>
@@ -376,22 +402,22 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/30"><span className="font-bold text-slate-300 text-xs">-</span></td>
                     
                     <td className="py-3 px-6 text-center border-r border-slate-100">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:border-purple-400 shadow-sm transition-all">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:border-purple-400 shadow-sm transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id]?.min || "0"} onChange={(e) => handleTargetChange(row.id, 'min', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">{row.isRaw ? '' : '%'}</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:border-purple-400 shadow-sm transition-all">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:border-purple-400 shadow-sm transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id]?.max || "0"} onChange={(e) => handleTargetChange(row.id, 'max', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">{row.isRaw ? '' : '%'}</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:border-rose-400 shadow-sm transition-all">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:border-rose-400 shadow-sm transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id]?.bMin || "0"} onChange={(e) => handleTargetChange(row.id, 'bMin', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-rose-600 text-[13px]" /><span className="text-rose-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:border-emerald-400 shadow-sm transition-all">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:border-emerald-400 shadow-sm transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id]?.bMax || "0"} onChange={(e) => handleTargetChange(row.id, 'bMax', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-emerald-600 text-[13px]" /><span className="text-emerald-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
