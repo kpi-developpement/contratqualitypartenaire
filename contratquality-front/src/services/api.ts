@@ -32,14 +32,12 @@ export const uploadPlainteFile = (file: File, period: string) => uploadGeneric("
 export const uploadPtoFile = (file: File, period: string) => uploadGeneric("pto", file, period);
 export const uploadCadrageFile = (file: File, period: string) => uploadGeneric("cadrage", file, period);
 export const uploadGemNokFile = (file: File, period: string) => uploadGeneric("gemnok", file, period);
+export const uploadSavFile = (file: File, period: string) => uploadGeneric("sav", file, period);
 
-// ==== NOUVEAU: Appel de l'API Bonus ====
 export const calculateBonus = async (period: string, configPayload: any) => {
   const response = await fetch(`${API_BASE_URL}/bonus/calculate/${period}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(configPayload),
   });
 

@@ -60,6 +60,11 @@ public class ExcelController {
         return handleUpload(file, period, "GEM_NOK");
     }
 
+    @PostMapping("/upload/sav")
+    public ResponseEntity<?> uploadSavFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) {
+        return handleUpload(file, period, "SAV");
+    }
+
     private ResponseEntity<?> handleUpload(MultipartFile file, String period, String type) {
         if (file.isEmpty() || period == null || period.trim().isEmpty()) {
             Map<String, String> err = new HashMap<>();
@@ -69,19 +74,14 @@ public class ExcelController {
 
         try {
             MonthlyReport result;
-            if ("RANG".equals(type)) {
-                result = excelProcessingService.processRangFile(file, period);
-            } else if ("SATCLI".equals(type)) {
-                result = excelProcessingService.processSatcliFile(file, period);
-            } else if ("PLAINTE".equals(type)) {
-                result = excelProcessingService.processPlainteFile(file, period);
-            } else if ("PTO".equals(type)) {
-                result = excelProcessingService.processPtoFile(file, period);
-            } else if ("GEM_NOK".equals(type)) {
-                result = excelProcessingService.processGemNokFile(file, period);
-            } else {
-                result = excelProcessingService.processCadrageFile(file, period);
-            }
+            if ("RANG".equals(type)) result = excelProcessingService.processRangFile(file, period);
+            else if ("SATCLI".equals(type)) result = excelProcessingService.processSatcliFile(file, period);
+            else if ("PLAINTE".equals(type)) result = excelProcessingService.processPlainteFile(file, period);
+            else if ("PTO".equals(type)) result = excelProcessingService.processPtoFile(file, period);
+            else if ("GEM_NOK".equals(type)) result = excelProcessingService.processGemNokFile(file, period);
+            else if ("SAV".equals(type)) result = excelProcessingService.processSavFile(file, period);
+            else result = excelProcessingService.processCadrageFile(file, period);
+
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("Erreur (Type: {}) : {}", type, e.getMessage(), e);

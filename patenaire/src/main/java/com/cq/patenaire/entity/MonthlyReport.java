@@ -15,8 +15,9 @@ import java.util.Map;
 public class MonthlyReport {
 
     @Id
-    private String period; // Ex: "2026-07"
+    private String period;
 
+    // ================= RACC =================
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Map<String, IndicatorResult>> perfRang1 = new HashMap<>();
@@ -53,8 +54,28 @@ public class MonthlyReport {
     @Column(columnDefinition = "jsonb")
     private IndicatorResult gemNok;
 
-    public MonthlyReport() {
-    }
+    // ================= SAV =================
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult savSatcli;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult savSecurisation;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult savTnh;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult savCcr;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private IndicatorResult savPerf;
+
+    public MonthlyReport() {}
 
     public MonthlyReport(String period) {
         this.period = period;
@@ -67,15 +88,11 @@ public class MonthlyReport {
 
         for (String activity : activities) {
             Map<String, IndicatorResult> zoneMap = new HashMap<>();
-            for (String zone : zones) {
-                zoneMap.put(zone, new IndicatorResult(0, 0, 0.0));
-            }
+            for (String zone : zones) zoneMap.put(zone, new IndicatorResult(0, 0, 0.0));
             perfRang1.put(activity, zoneMap);
         }
 
-        for (String zone : zones) {
-            perfRang2.put(zone, new IndicatorResult(0, 0, 0.0));
-        }
+        for (String zone : zones) perfRang2.put(zone, new IndicatorResult(0, 0, 0.0));
 
         this.tnh = new IndicatorResult(0, 0, 0.0);
         this.satcliOk = new IndicatorResult(0, 0, 0.0);
@@ -84,5 +101,11 @@ public class MonthlyReport {
         this.incoherencePto = new IndicatorResult(0, 0, 0.0);
         this.cadrage = new IndicatorResult(0, 0, 0.0);
         this.gemNok = new IndicatorResult(0, 0, 0.0);
+
+        this.savSatcli = new IndicatorResult(0, 0, 0.0);
+        this.savSecurisation = new IndicatorResult(0, 0, 0.0);
+        this.savTnh = new IndicatorResult(0, 0, 0.0);
+        this.savCcr = new IndicatorResult(0, 0, 0.0);
+        this.savPerf = new IndicatorResult(0, 0, 0.0);
     }
 }

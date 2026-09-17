@@ -41,6 +41,7 @@ public class BonusCalculationService {
             double resultat = stat.getResultat();
             double pdm = 0.0;
 
+            // PDM RACC
             if (indicatorId.startsWith("RANG2")) {
                 if (totalDenumR2 > 0) pdm = stat.getDenum() / totalDenumR2;
             } else if (indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline")) {
@@ -49,58 +50,33 @@ public class BonusCalculationService {
 
             double tMin = target.getPointMin() / 100.0;
             double tMax = target.getPointMax() / 100.0;
-
-            // On prend le bonus de l'indicateur s'il existe, sinon on prend le global
             double bMin = target.getBonusMin() != null ? target.getBonusMin() / 100.0 : config.getBonusMin() / 100.0;
             double bMax = target.getBonusMax() != null ? target.getBonusMax() / 100.0 : config.getBonusMax() / 100.0;
 
             double bonus = 0.0;
 
-            // ==========================================
-            // APPLICATION STRICTE DE VOS FORMULES EXCEL
-            // ==========================================
+            // Logique de Bonus unifiée
             if (indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline") || indicatorId.startsWith("RANG2")) {
-                // =SI(E6<=G6;$I$6*F6;SI(E6>=H6;F6*$J$6;(E6-G6)/(H6-G6)*$J$6*F6*G29))
-                if (resultat <= tMin) {
-                    bonus = bMin * pdm;
-                } else if (resultat >= tMax) {
-                    bonus = bMax * pdm;
-                } else if (tMax != tMin) {
-                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * pdm * config.getFacteurG29();
-                }
+                if (resultat <= tMin) bonus = bMin * pdm;
+                else if (resultat >= tMax) bonus = bMax * pdm;
+                else if (tMax != tMin) bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * pdm;
             }
-            else if (indicatorId.equals("SATCLI_OK") || indicatorId.equals("SATCLI_NOK")) {
-                // =SI(E<=G;I;SI(E>=H;J;(E-G)/(H-G)*J))
-                if (resultat <= tMin) {
-                    bonus = bMin;
-                } else if (resultat >= tMax) {
-                    bonus = bMax;
-                } else if (tMax != tMin) {
-                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax;
-                }
+            else if (indicatorId.equals("SATCLI_OK") || indicatorId.equals("SATCLI_NOK") || indicatorId.equals("SAV_SATCLI") || indicatorId.equals("SAV_SECURISATION") || indicatorId.equals("SAV_PERF")) {
+                // Higher is better
+                if (resultat <= tMin) bonus = bMin;
+                else if (resultat >= tMax) bonus = bMax;
+                else if (tMax != tMin) bonus = ((resultat - tMin) / (tMax - tMin)) * bMax;
             }
-            else if (indicatorId.equals("PLAINTE") || indicatorId.equals("TNH") || indicatorId.equals("CADRAGE") || indicatorId.equals("INCOHERENCE_PTO")) {
-                // LOGIQUE INVERSÉE : =SI(E>=G;I;SI(E<=H;J;(E-G)/(H-G)*J*FACTEUR))
-                if (resultat >= tMin) {
-                    bonus = bMin;
-                } else if (resultat <= tMax) {
-                    bonus = bMax;
-                } else if (tMax != tMin) {
-                    double facteur = 1.0;
-                    if (indicatorId.equals("TNH")) facteur = config.getFacteurG45();
-                    if (indicatorId.equals("CADRAGE")) facteur = config.getFacteurG46();
-                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * facteur;
-                }
+            else if (indicatorId.equals("PLAINTE") || indicatorId.equals("TNH") || indicatorId.equals("CADRAGE") || indicatorId.equals("INCOHERENCE_PTO") || indicatorId.equals("SAV_TNH") || indicatorId.equals("SAV_CCR")) {
+                // Lower is better (Inverted)
+                if (resultat >= tMin) bonus = bMin;
+                else if (resultat <= tMax) bonus = bMax;
+                else if (tMax != tMin) bonus = ((resultat - tMin) / (tMax - tMin)) * bMax;
             }
             else if (indicatorId.equals("GEM_NOK")) {
-                // =SI(E<=G;I;SI(E>=H;J;(E-G)/(H-G)*J*G44))
-                if (resultat <= tMin) {
-                    bonus = bMin;
-                } else if (resultat >= tMax) {
-                    bonus = bMax;
-                } else if (tMax != tMin) {
-                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * config.getFacteurG44();
-                }
+                if (resultat <= tMin) bonus = bMin;
+                else if (resultat >= tMax) bonus = bMax;
+                else if (tMax != tMin) bonus = ((resultat - tMin) / (tMax - tMin)) * bMax;
             }
 
             results.put(indicatorId, new BonusResultItem(indicatorId, resultat, pdm, bonus));
@@ -113,9 +89,7 @@ public class BonusCalculationService {
         double sum = 0;
         if (report.getPerfRang1() != null) {
             for (Map<String, IndicatorResult> zones : report.getPerfRang1().values()) {
-                for (IndicatorResult ind : zones.values()) {
-                    sum += ind.getDenum();
-                }
+                for (IndicatorResult ind : zones.values()) sum += ind.getDenum();
             }
         }
         return sum;
@@ -124,9 +98,7 @@ public class BonusCalculationService {
     private double calculateTotalDenumR2(MonthlyReport report) {
         double sum = 0;
         if (report.getPerfRang2() != null) {
-            for (IndicatorResult ind : report.getPerfRang2().values()) {
-                sum += ind.getDenum();
-            }
+            for (IndicatorResult ind : report.getPerfRang2().values()) sum += ind.getDenum();
         }
         return sum;
     }
@@ -149,6 +121,13 @@ public class BonusCalculationService {
                 case "TNH": return report.getTnh();
                 case "CADRAGE": return report.getCadrage();
                 case "INCOHERENCE_PTO": return report.getIncoherencePto();
+
+                // SAV
+                case "SAV_SATCLI": return report.getSavSatcli();
+                case "SAV_SECURISATION": return report.getSavSecurisation();
+                case "SAV_TNH": return report.getSavTnh();
+                case "SAV_CCR": return report.getSavCcr();
+                case "SAV_PERF": return report.getSavPerf();
             }
         }
         return null;

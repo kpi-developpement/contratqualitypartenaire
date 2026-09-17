@@ -27,29 +27,9 @@ public class ExcelProcessingService {
         this.repository = repository;
     }
 
-    // Constantes RANG / TNH
-    private static final String COL_ZONE_STATUT = "Zone_statut prise";
-    private static final String COL_RANG_RDV = "RANG_RDV (copie)";
-    private static final String COL_STATUT_CR = "GRP_STATUT_CRINSTALL_MNT";
-    private static final String VAL_CR_OK = "CR_MNT_OK";
-    private static final String COL_MOTF_KO = "MOTF_KO_CR_INST_FIRST_CRINSTALL_MNT";
-    private static final String VAL_MOTF_KO = "CR DELAI - Organisation installateur";
-
-    // Constantes SATCLI
-    private static final String COL_VALR_NOT_GLBL = "Valr Not Glbl";
-    private static final String VAL_CR_NOK = "CR_MNT_NOK";
-    private static final String VAL_CR_DELAI = "CR_MNT_DELAI";
-
-    // Constantes TAUX DE PLAINTE
-    private static final String COL_VOL_TICKET = "Volume ticket qualité";
-
-    // Constantes PTO / CADRAGE
-    private static final String COL_PTO_MAGOUILLE = "PTO magouille";
-    private static final String COL_MAL_CADREE = "MAL_CADREE";
-
-    // Constantes GEM NOK
-    private static final String COL_TVC = "TVC";
-    private static final String COL_FLG_GEM = "Flg Gem";
+    // ==========================================
+    // MÉTHODES DE TRAITEMENT
+    // ==========================================
 
     public MonthlyReport getReportByPeriod(String period) {
         return repository.findById(period).orElse(new MonthlyReport(period));
@@ -59,82 +39,53 @@ public class ExcelProcessingService {
         return repository.findById(period).orElseGet(() -> new MonthlyReport(period));
     }
 
-    // ==========================================
-    // PROCESS RANG (Rang 1, Rang 2, TNH)
-    // ==========================================
+    // ----- RACC METHODS -----
     public MonthlyReport processRangFile(MultipartFile file, String period) throws Exception {
         MonthlyReport report = getOrCreateReport(period);
-        report.initDefaults(); // Reset existing rang data if re-uploading
-
+        report.initDefaults();
         processGenericFile(file, record -> {
-            String zoneStatutRaw = record.get(COL_ZONE_STATUT.toLowerCase());
-            String rangRdvRaw = record.get(COL_RANG_RDV.toLowerCase());
-            String statutCrRaw = record.get(COL_STATUT_CR.toLowerCase());
-            String motfKoRaw = record.get(COL_MOTF_KO.toLowerCase());
-
+            String zoneStatutRaw = record.get("zone_statut prise");
+            String rangRdvRaw = record.get("rang_rdv (copie)");
+            String statutCrRaw = record.get("grp_statut_crinstall_mnt");
+            String motfKoRaw = record.get("motf_ko_cr_inst_first_crinstall_mnt");
             extractAndComputeRowRang(zoneStatutRaw, rangRdvRaw, statutCrRaw, motfKoRaw, report);
         });
-
         calculateFinalResults(report);
         return repository.save(report);
     }
 
-    // ==========================================
-    // PROCESS SATCLI (Satcli OK & NOK)
-    // ==========================================
     public MonthlyReport processSatcliFile(MultipartFile file, String period) throws Exception {
         MonthlyReport report = getOrCreateReport(period);
         report.setSatcliOk(new IndicatorResult(0, 0, 0.0));
         report.setSatcliNok(new IndicatorResult(0, 0, 0.0));
-
         processGenericFile(file, record -> {
-            String statutCrRaw = record.get(COL_STATUT_CR.toLowerCase());
-            String valrNotGlblRaw = record.get(COL_VALR_NOT_GLBL.toLowerCase());
-
+            String statutCrRaw = record.get("grp_statut_crinstall_mnt");
+            String valrNotGlblRaw = record.get("valr not glbl");
             extractAndComputeRowSatcli(statutCrRaw, valrNotGlblRaw, report);
         });
-
         calculateFinalResults(report);
         return repository.save(report);
     }
 
-    // ==========================================
-    // PROCESS TAUX DE PLAINTE
-    // ==========================================
     public MonthlyReport processPlainteFile(MultipartFile file, String period) throws Exception {
         MonthlyReport report = getOrCreateReport(period);
-
-        if (report.getTnh() == null || report.getTnh().getDenum() == 0) {
-            throw new RuntimeException("Veuillez d'abord importer le fichier RANG/TNH pour la période " + period + " afin d'avoir le dénominateur.");
-        }
-
+        if (report.getTnh() == null || report.getTnh().getDenum() == 0) throw new RuntimeException("Veuillez d'abord importer le fichier RANG/TNH.");
         report.setTauxPlainte(new IndicatorResult(0, report.getTnh().getDenum(), 0.0));
-
         processGenericFile(file, record -> {
-            String volTicketRaw = record.get(COL_VOL_TICKET.toLowerCase());
+            String volTicketRaw = record.get("volume ticket qualité");
             int volume = 0;
-            try {
-                if (volTicketRaw != null && !volTicketRaw.trim().isEmpty()) {
-                    volume = (int) Double.parseDouble(volTicketRaw.trim());
-                }
-            } catch (Exception ignored) {}
-
+            try { if (volTicketRaw != null && !volTicketRaw.trim().isEmpty()) volume = (int) Double.parseDouble(volTicketRaw.trim()); } catch (Exception ignored) {}
             report.getTauxPlainte().setNum(report.getTauxPlainte().getNum() + volume);
         });
-
         calculateFinalResults(report);
         return repository.save(report);
     }
 
-    // ==========================================
-    // PROCESS INCOHERENCE PTO
-    // ==========================================
     public MonthlyReport processPtoFile(MultipartFile file, String period) throws Exception {
         MonthlyReport report = getOrCreateReport(period);
         report.setIncoherencePto(new IndicatorResult(0, 0, 0.0));
-
         processGenericFile(file, record -> {
-            String valRaw = record.get(COL_PTO_MAGOUILLE.toLowerCase());
+            String valRaw = record.get("pto magouille");
             if (valRaw != null) {
                 String val = valRaw.trim();
                 if ("1".equals(val) || "1.0".equals(val)) {
@@ -145,20 +96,15 @@ public class ExcelProcessingService {
                 }
             }
         });
-
         calculateFinalResults(report);
         return repository.save(report);
     }
 
-    // ==========================================
-    // PROCESS CADRAGE
-    // ==========================================
     public MonthlyReport processCadrageFile(MultipartFile file, String period) throws Exception {
         MonthlyReport report = getOrCreateReport(period);
         report.setCadrage(new IndicatorResult(0, 0, 0.0));
-
         processGenericFile(file, record -> {
-            String valRaw = record.get(COL_MAL_CADREE.toLowerCase());
+            String valRaw = record.get("mal_cadree");
             if (valRaw != null) {
                 String val = valRaw.trim();
                 if ("1".equals(val) || "1.0".equals(val)) {
@@ -169,43 +115,107 @@ public class ExcelProcessingService {
                 }
             }
         });
-
         calculateFinalResults(report);
         return repository.save(report);
     }
 
-    // ==========================================
-    // PROCESS GEM NOK
-    // ==========================================
     public MonthlyReport processGemNokFile(MultipartFile file, String period) throws Exception {
         MonthlyReport report = getOrCreateReport(period);
         report.setGemNok(new IndicatorResult(0, 0, 0.0));
-
         processGenericFile(file, record -> {
-            String tvcRaw = record.get(COL_TVC.toLowerCase());
-            String flgGemRaw = record.get(COL_FLG_GEM.toLowerCase());
-
-            // Fallback: Au cas où le fichier utilise "Grp Statut Crinstall Mnt" avec des espaces au lieu des underscores
-            String statutCrRaw = record.get(COL_STATUT_CR.toLowerCase());
-            if (statutCrRaw == null) {
-                statutCrRaw = record.get("grp statut crinstall mnt");
-            }
+            String tvcRaw = record.get("tvc");
+            String flgGemRaw = record.get("flg gem");
+            String statutCrRaw = record.get("grp_statut_crinstall_mnt");
+            if (statutCrRaw == null) statutCrRaw = record.get("grp statut crinstall mnt");
 
             if (tvcRaw != null && flgGemRaw != null) {
                 String tvc = tvcRaw.trim();
                 String flgGem = flgGemRaw.trim();
                 String statutCr = statutCrRaw != null ? statutCrRaw.trim() : "";
 
-                // DENUM = TVC "OUI" et Flg Gem "1"
                 if ("OUI".equalsIgnoreCase(tvc) && ("1".equals(flgGem) || "1.0".equals(flgGem))) {
                     report.getGemNok().setDenum(report.getGemNok().getDenum() + 1);
-
-                    // NUM = DENUM + CR_MNT_OK
-                    if (VAL_CR_OK.equalsIgnoreCase(statutCr)) {
+                    if ("CR_MNT_OK".equalsIgnoreCase(statutCr)) {
                         report.getGemNok().setNum(report.getGemNok().getNum() + 1);
                     }
                 }
             }
+        });
+        calculateFinalResults(report);
+        return repository.save(report);
+    }
+
+    // ----- SAV METHODS -----
+    public MonthlyReport processSavFile(MultipartFile file, String period) throws Exception {
+        MonthlyReport report = getOrCreateReport(period);
+
+        // Reset SAV stats
+        report.setSavSatcli(new IndicatorResult(0, 0, 0.0));
+        report.setSavSecurisation(new IndicatorResult(0, 0, 0.0));
+        report.setSavTnh(new IndicatorResult(0, 0, 0.0));
+        report.setSavCcr(new IndicatorResult(0, 0, 0.0));
+        report.setSavPerf(new IndicatorResult(0, 0, 0.0));
+
+        processGenericFile(file, record -> {
+
+            // Extraction flexible des colonnes (Excel met souvent des espaces ou caractères cachés)
+            String noteSatcli = getFlexibleRecord(record, "note satcli ftth");
+            String flagSecu = getFlexibleRecord(record, "flag_secu_interv_cq2024");
+            String statutInterv = getFlexibleRecord(record, "statut intervention");
+            String codCltrMain = getFlexibleRecord(record, "cod cltr main");
+            String poidsCcr = getFlexibleRecord(record, "poids ccr"); // Substring check for [CONTRAT_QUALITE_2025] Poids CCR
+
+            // 1. SATCLI SAV
+            if (noteSatcli != null && !noteSatcli.trim().isEmpty()) {
+                String note = noteSatcli.trim();
+                if (Arrays.asList("1", "1.0", "2", "2.0", "3", "3.0", "4", "4.0", "5", "5.0").contains(note)) {
+                    report.getSavSatcli().setDenum(report.getSavSatcli().getDenum() + 1);
+                    if (Arrays.asList("1", "1.0", "2", "2.0").contains(note)) {
+                        report.getSavSatcli().setNum(report.getSavSatcli().getNum() + 1);
+                    }
+                }
+            }
+
+            // 2. SECURISATION SAV
+            if (flagSecu != null && !flagSecu.trim().isEmpty()) {
+                String flag = flagSecu.trim();
+                if (Arrays.asList("0", "0.0", "1", "1.0").contains(flag)) {
+                    report.getSavSecurisation().setDenum(report.getSavSecurisation().getDenum() + 1);
+                    if ("1".equals(flag) || "1.0".equals(flag)) {
+                        report.getSavSecurisation().setNum(report.getSavSecurisation().getNum() + 1);
+                    }
+                }
+            }
+
+            // 3. TNH SAV & 5. PERF SAV (Both rely on Statut Intervention for Denum)
+            if (statutInterv != null && !statutInterv.trim().isEmpty()) {
+                String statut = statutInterv.trim();
+
+                // TNH
+                report.getSavTnh().setDenum(report.getSavTnh().getDenum() + 1);
+                String cod = codCltrMain != null ? codCltrMain.trim().toUpperCase() : "";
+                if ("INR2B".equals(cod) || "INR2C".equals(cod)) {
+                    report.getSavTnh().setNum(report.getSavTnh().getNum() + 1);
+                }
+
+                // PERF
+                report.getSavPerf().setDenum(report.getSavPerf().getDenum() + 1);
+                if ("TERMINEE_OK".equalsIgnoreCase(statut)) {
+                    report.getSavPerf().setNum(report.getSavPerf().getNum() + 1);
+                }
+            }
+
+            // 4. CCR SAV
+            if (poidsCcr != null && !poidsCcr.trim().isEmpty()) {
+                String poids = poidsCcr.trim();
+                if (Arrays.asList("0", "0.0", "3", "3.0").contains(poids)) {
+                    report.getSavCcr().setDenum(report.getSavCcr().getDenum() + 1);
+                    if ("0".equals(poids) || "0.0".equals(poids)) {
+                        report.getSavCcr().setNum(report.getSavCcr().getNum() + 1);
+                    }
+                }
+            }
+
         });
 
         calculateFinalResults(report);
@@ -213,13 +223,22 @@ public class ExcelProcessingService {
     }
 
     // ==========================================
-    // HELPERS EXTRACTION LOGIC
+    // HELPERS LOGIC
     // ==========================================
+    private String getFlexibleRecord(Map<String, String> recordMap, String keyword) {
+        for (String key : recordMap.keySet()) {
+            if (key.contains(keyword)) {
+                return recordMap.get(key);
+            }
+        }
+        return null;
+    }
+
     private void extractAndComputeRowRang(String zoneStatutRaw, String rangRdvRaw, String statutCrRaw, String motfKoRaw, MonthlyReport report) {
         String motfKo = motfKoRaw != null ? motfKoRaw.trim() : "";
         report.getTnh().setDenum(report.getTnh().getDenum() + 1);
 
-        if (VAL_MOTF_KO.equalsIgnoreCase(motfKo)) {
+        if ("CR DELAI - Organisation installateur".equalsIgnoreCase(motfKo)) {
             report.getTnh().setNum(report.getTnh().getNum() + 1);
         }
 
@@ -237,7 +256,7 @@ public class ExcelProcessingService {
         else if (activityRaw.contains("HOTLINE")) activity = "Hotline";
 
         String zone = extractZoneLetter(parts.length > 1 ? parts[1].trim() : "");
-        boolean isCrOk = statutCr.equalsIgnoreCase(VAL_CR_OK);
+        boolean isCrOk = "CR_MNT_OK".equalsIgnoreCase(statutCr);
         boolean isRang1 = "1".equals(rangRdv) || "1.0".equals(rangRdv);
 
         if (isRang1) {
@@ -259,18 +278,14 @@ public class ExcelProcessingService {
         String statutCr = statutCrRaw != null ? statutCrRaw.trim() : "";
         String valrNotGlbl = valrNotGlblRaw != null ? valrNotGlblRaw.trim() : "";
 
-        if (VAL_CR_OK.equalsIgnoreCase(statutCr)) {
+        if ("CR_MNT_OK".equalsIgnoreCase(statutCr)) {
             report.getSatcliOk().setDenum(report.getSatcliOk().getDenum() + 1);
-            if ("5".equals(valrNotGlbl) || "5.0".equals(valrNotGlbl)) {
-                report.getSatcliOk().setNum(report.getSatcliOk().getNum() + 1);
-            }
+            if ("5".equals(valrNotGlbl) || "5.0".equals(valrNotGlbl)) report.getSatcliOk().setNum(report.getSatcliOk().getNum() + 1);
         }
 
-        if (VAL_CR_NOK.equalsIgnoreCase(statutCr) || VAL_CR_DELAI.equalsIgnoreCase(statutCr)) {
+        if ("CR_MNT_NOK".equalsIgnoreCase(statutCr) || "CR_MNT_DELAI".equalsIgnoreCase(statutCr)) {
             report.getSatcliNok().setDenum(report.getSatcliNok().getDenum() + 1);
-            if ("4".equals(valrNotGlbl) || "4.0".equals(valrNotGlbl) || "5".equals(valrNotGlbl) || "5.0".equals(valrNotGlbl)) {
-                report.getSatcliNok().setNum(report.getSatcliNok().getNum() + 1);
-            }
+            if (Arrays.asList("4", "4.0", "5", "5.0").contains(valrNotGlbl)) report.getSatcliNok().setNum(report.getSatcliNok().getNum() + 1);
         }
     }
 
@@ -289,6 +304,13 @@ public class ExcelProcessingService {
         if (report.getIncoherencePto() != null) report.getIncoherencePto().calculateResult();
         if (report.getCadrage() != null) report.getCadrage().calculateResult();
         if (report.getGemNok() != null) report.getGemNok().calculateResult();
+
+        // SAV
+        if (report.getSavSatcli() != null) report.getSavSatcli().calculateResult();
+        if (report.getSavSecurisation() != null) report.getSavSecurisation().calculateResult();
+        if (report.getSavTnh() != null) report.getSavTnh().calculateResult();
+        if (report.getSavCcr() != null) report.getSavCcr().calculateResult();
+        if (report.getSavPerf() != null) report.getSavPerf().calculateResult();
     }
 
     private String extractZoneLetter(String zoneRaw) {
