@@ -23,7 +23,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
   const [viewMode, setViewMode] = useState<'data' | 'bonus'>('data');
   const [filterMode, setFilterMode] = useState<'ALL' | 'R1' | 'R2' | 'AUTRES'>('ALL');
 
-  // Récupération des données depuis reportData (L'FIX est ici)
+  // Récupération des données
   const rang1 = reportData?.perf_rang1 || reportData?.perf_rang_1 || reportData?.perfRang1;
   const rang2 = reportData?.perf_rang2 || reportData?.perf_rang_2 || reportData?.perfRang2;
   const tnh = reportData?.tnh;
@@ -56,14 +56,14 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
     "CADRAGE": { min: "2", max: "1", bMin: "-2", bMax: "1" },
     "INCOHERENCE_PTO": { min: "7", max: "9", bMin: "0", bMax: "2" },
 
-    // SAV
-    "SAV_SATCLI": { min: "85", max: "95", bMin: "0", bMax: "4" },
-    "SAV_SECURISATION": { min: "80", max: "90", bMin: "0", bMax: "2" },
+    // SAV (Valeurs initiales selon l'image)
+    "SAV_PERF": { min: "81", max: "88", bMin: "-2", bMax: "2" }, // Taux de CR OK
+    "SAV_SECURISATION": { min: "3", max: "0", bMin: "-2", bMax: "2" },
+    "AUDIT": { min: "2", max: "0", bMin: "-1", bMax: "1" },
+    "SAV_SATCLI": { min: "10", max: "0", bMin: "-2", bMax: "2" }, // Clients très insatisfaits
+    "SAV_CCR": { min: "2", max: "1", bMin: "-3", bMax: "3" }, // Conformité CR
+    "REE": { min: "7", max: "2", bMin: "-2", bMax: "2" },
     "SAV_TNH": { min: "5", max: "2", bMin: "-2", bMax: "1" },
-    "SAV_CCR": { min: "10", max: "5", bMin: "-1", bMax: "2" },
-    "SAV_PERF": { min: "90", max: "95", bMin: "0", bMax: "3" },
-    "AUDIT": { min: "48", max: "24", bMin: "0", bMax: "2" },
-    "REE": { min: "48", max: "24", bMin: "0", bMax: "2" },
   });
 
   const [bonusResults, setBonusResults] = useState<Record<string, any>>({});
@@ -71,7 +71,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
 
   const formatPercent = (value: number) => (value * 100).toFixed(2) + "%";
   const formatPercentOrRaw = (id: string, value: number) => {
-    if (id === 'AUDIT' || id === 'REE') return value.toFixed(2);
+    if (id === 'REE') return value.toFixed(4); // Ex: 4.7486
     return (value * 100).toFixed(2) + "%";
   };
 
@@ -93,7 +93,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
   const totalBonus = useMemo(() => {
     let sum = 0;
     Object.values(bonusResults).forEach((res: any) => {
-      // Filtrer les bonus selon la catégorie
       if (category === 'RACC' && !res.indicatorId.startsWith('SAV_') && res.indicatorId !== 'AUDIT' && res.indicatorId !== 'REE') {
         sum += (res?.bonusCalcule ?? res?.bonus_calcule ?? 0);
       }
@@ -154,24 +153,24 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
   ];
 
   const rowsDefRaccAutres = [
-    { id: "SATCLI_OK", cat: "Satcli (sur RDV OK)", stat: satcliOk, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", textClass: "text-teal-700", bgClass: "bg-teal-50", borderClass: "border-teal-200" },
-    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: satcliNok, icon: <Frown size={20} className="text-orange-400" />, colorClass: "bg-orange-500", textClass: "text-orange-700", bgClass: "bg-orange-50", borderClass: "border-orange-200" },
-    { id: "PLAINTE", cat: "Taux de plainte", stat: tauxPlainte, icon: <MessageSquareWarning size={20} className="text-rose-400" />, colorClass: "bg-rose-500", textClass: "text-rose-700", bgClass: "bg-rose-50", borderClass: "border-rose-200" },
-    { id: "GEM_NOK", cat: "Transf. des GEM en TVC", stat: gemNok, icon: <Zap size={20} className="text-cyan-400" />, colorClass: "bg-cyan-500", textClass: "text-cyan-700", bgClass: "bg-cyan-50", borderClass: "border-cyan-200" },
-    { id: "TNH", cat: "Taux de RDV non honoré", stat: tnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", textClass: "text-purple-700", bgClass: "bg-purple-50", borderClass: "border-purple-200" },
-    { id: "CADRAGE", cat: "Conformité Cadrage", stat: cadrage, icon: <Crop size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", textClass: "text-indigo-700", bgClass: "bg-indigo-50", borderClass: "border-indigo-200" },
-    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-pink-400" />, colorClass: "bg-pink-500", textClass: "text-pink-700", bgClass: "bg-pink-50", borderClass: "border-pink-200" }
+    { id: "SATCLI_OK", cat: "Satcli (sur RDV OK)", stat: satcliOk, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", isRaw: false },
+    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: satcliNok, icon: <Frown size={20} className="text-orange-400" />, colorClass: "bg-orange-500", isRaw: false },
+    { id: "PLAINTE", cat: "Taux de plainte", stat: tauxPlainte, icon: <MessageSquareWarning size={20} className="text-rose-400" />, colorClass: "bg-rose-500", isRaw: false },
+    { id: "GEM_NOK", cat: "Transf. des GEM en TVC", stat: gemNok, icon: <Zap size={20} className="text-cyan-400" />, colorClass: "bg-cyan-500", isRaw: false },
+    { id: "TNH", cat: "Taux de RDV non honoré", stat: tnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false },
+    { id: "CADRAGE", cat: "Conformité Cadrage", stat: cadrage, icon: <Crop size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: false },
+    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-pink-400" />, colorClass: "bg-pink-500", isRaw: false },
   ];
 
   // ------------------ DÉFINITIONS DES LIGNES SAV ------------------
   const rowsDefSav = [
-    { id: "SAV_SATCLI", cat: "SAV - SATCLI", stat: savSatcli, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", textClass: "text-teal-700", bgClass: "bg-teal-50", borderClass: "border-teal-200" },
-    { id: "SAV_SECURISATION", cat: "SAV - Sécurisation", stat: savSecurisation, icon: <ShieldCheck size={20} className="text-blue-400" />, colorClass: "bg-blue-500", textClass: "text-blue-700", bgClass: "bg-blue-50", borderClass: "border-blue-200" },
-    { id: "SAV_TNH", cat: "SAV - TNH", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", textClass: "text-purple-700", bgClass: "bg-purple-50", borderClass: "border-purple-200" },
-    { id: "SAV_CCR", cat: "SAV - CCR", stat: savCcr, icon: <FileCheck size={20} className="text-amber-400" />, colorClass: "bg-amber-500", textClass: "text-amber-700", bgClass: "bg-amber-50", borderClass: "border-amber-200" },
-    { id: "SAV_PERF", cat: "SAV - Performance", stat: savPerf, icon: <CheckCircle2 size={20} className="text-emerald-400" />, colorClass: "bg-emerald-500", textClass: "text-emerald-700", bgClass: "bg-emerald-50", borderClass: "border-emerald-200" },
-    { id: "AUDIT", cat: "Délai Audit (90e Centile)", stat: audit, icon: <ClipboardCheck size={20} className="text-fuchsia-400" />, colorClass: "bg-fuchsia-500", textClass: "text-fuchsia-700", bgClass: "bg-fuchsia-50", borderClass: "border-fuchsia-200", isRaw: true },
-    { id: "REE", cat: "Délai REE (90e Centile)", stat: ree, icon: <Timer size={20} className="text-emerald-400" />, colorClass: "bg-emerald-500", textClass: "text-emerald-700", bgClass: "bg-emerald-50", borderClass: "border-emerald-200", isRaw: true }
+    { id: "SAV_PERF", cat: "Taux de CR OK", stat: savPerf, icon: <CheckCircle2 size={20} className="text-emerald-400" />, colorClass: "bg-emerald-500", isRaw: false },
+    { id: "SAV_SECURISATION", cat: "Sécurisation de RDV", stat: savSecurisation, icon: <ShieldCheck size={20} className="text-blue-400" />, colorClass: "bg-blue-500", isRaw: false },
+    { id: "AUDIT", cat: "Délai de traitement audit", stat: audit, icon: <ClipboardCheck size={20} className="text-fuchsia-400" />, colorClass: "bg-fuchsia-500", isRaw: false },
+    { id: "SAV_SATCLI", cat: "Clients très insatisfait", stat: savSatcli, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", isRaw: false },
+    { id: "SAV_CCR", cat: "Conformité CR", stat: savCcr, icon: <FileCheck size={20} className="text-amber-400" />, colorClass: "bg-amber-500", isRaw: false },
+    { id: "REE", cat: "Délai de traitement des remises en état", stat: ree, icon: <Timer size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: true },
+    { id: "SAV_TNH", cat: "Taux de RDV non honoré (SAV)", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false }
   ];
 
   return (
@@ -280,7 +279,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
               {(category === 'RACC' ? ((filterMode === 'ALL' || filterMode === 'AUTRES') ? rowsDefRaccAutres : []) : rowsDefSav).map((row) => {
                 const stats = row.stat;
                 if (!stats || (stats.num === 0 && stats.denum === 0)) return null;
-                const percentValue = stats.resultat * 100;
 
                 return (
                   <tr key={`other-data-${row.id}`} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100/50 bg-white">
@@ -291,10 +289,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                       </div>
                     </td>
                     <td className="py-4 px-8 align-middle border-r border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className={cn("p-1.5 rounded-lg border shadow-sm", row.colorClass.replace('bg-', 'bg-opacity-10 border-').replace('500', '200'))}>{row.icon}</div>
-                        <span className="font-extrabold text-slate-700 text-[13px]">{row.cat}</span>
-                      </div>
+                      <span className="font-extrabold text-slate-700 text-[13px]">{row.cat}</span>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-400 font-bold text-xs border border-slate-200/60">Global</span></td>
                     
@@ -312,10 +307,10 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     
                     <td className="py-3 px-6">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <span className={cn("px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 shadow-sm", row.bgClass, row.borderClass, row.textClass)}>
+                        <span className={cn("px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 shadow-sm", row.colorClass.replace('bg-', 'bg-opacity-10 border-').replace('500', '200'), row.colorClass.replace('bg-', 'text-').replace('500', '700'))}>
                           <div className={cn("w-1.5 h-1.5 rounded-full", row.colorClass)}></div>{formatPercentOrRaw(row.id, stats.resultat)}
                         </span>
-                        {!row.isRaw && <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1"><div className={cn("h-full rounded-full transition-all duration-1000", row.colorClass)} style={{ width: `${percentValue}%` }}></div></div>}
+                        {!row.isRaw && <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1"><div className={cn("h-full rounded-full transition-all duration-1000", row.colorClass)} style={{ width: `${stats.resultat * 100}%` }}></div></div>}
                       </div>
                     </td>
                   </tr>
@@ -339,7 +334,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                 <th className="py-4 px-6 font-black text-purple-800 tracking-widest text-[10px] uppercase text-center border-r border-purple-100/50 w-28">Bonus Min</th>
                 <th className="py-4 px-6 font-black text-purple-800 tracking-widest text-[10px] uppercase text-center border-r border-purple-100/50 w-28">Bonus Max</th>
                 <th className="py-4 px-6 font-black text-purple-800 tracking-widest text-[10px] uppercase text-center bg-purple-100/40">
-                  <div className="flex items-center justify-center gap-2">Bonus Ind.</div>
+                  <div className="flex items-center justify-center gap-2">Bonus Ind. {isCalculating && <Loader2 size={12} className="animate-spin text-purple-600" />}</div>
                 </th>
               </tr>
             </thead>
@@ -381,12 +376,12 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/10"><span className="font-bold text-blue-600 text-xs">{formatPercent(pdm)}</span></td>
                     
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
+                      <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].min} onChange={(e) => handleTargetChange(row.id, 'min', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
+                      <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].max} onChange={(e) => handleTargetChange(row.id, 'max', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
@@ -419,7 +414,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                   <tr key={`bonus-other-${row.id}`} className="hover:bg-slate-50/60 transition-colors border-b border-slate-100/60 bg-[#fbfcfd]">
                     <td className="py-4 px-6 align-middle border-r border-slate-100">
                       <div className="flex items-center gap-3">
-                        <div className={cn("p-1.5 rounded-lg border shadow-sm", row.bgClass, row.borderClass)}>{row.icon}</div>
+                        <div className={cn("p-1.5 rounded-lg border shadow-sm", row.colorClass.replace('bg-', 'bg-opacity-10 border-').replace('500', '200'))}>{row.icon}</div>
                         <span className="font-extrabold text-slate-700 text-[13px]">{row.cat}</span>
                       </div>
                     </td>
