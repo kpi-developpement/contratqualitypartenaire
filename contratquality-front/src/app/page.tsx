@@ -27,12 +27,14 @@ export default function Home() {
   const handleSuccess = (data: ReportResponse[]) => {
     setAllReports(data);
     setError(null);
-    if (!data.find(r => r.partenaire === selectedPartner)) {
+    // Si le partenaire actuel n'est pas dans la liste des résultats, on reset à GLOBAL
+    if (!data.find(r => (r.partenaire || 'GLOBAL') === selectedPartner)) {
       setSelectedPartner("GLOBAL");
     }
   };
 
-  const currentReport = allReports.find(r => r.partenaire === selectedPartner) || null;
+  // FIX: On sécurise la sélection. S'il n'y a pas de partenaire on fallback sur GLOBAL
+  const currentReport = allReports.find(r => (r.partenaire || 'GLOBAL') === selectedPartner) || allReports.find(r => !r.partenaire || r.partenaire === 'GLOBAL') || null;
   const hasData = !!currentReport && Object.keys(currentReport).length > 0;
 
   return (
@@ -67,9 +69,11 @@ export default function Home() {
                 onChange={(e) => setSelectedPartner(e.target.value)}
                 className="bg-transparent text-blue-700 font-black focus:outline-none cursor-pointer outline-none"
               >
-                {allReports.map(r => (
+                {/* On s'assure d'avoir toujours l'option GLOBAL */}
+                <option value="GLOBAL">🌍 Tous (Global)</option>
+                {allReports.filter(r => (r.partenaire || 'GLOBAL') !== 'GLOBAL').map(r => (
                   <option key={r.partenaire} value={r.partenaire!}>
-                    {r.partenaire === 'GLOBAL' ? '🌍 Tous (Global)' : `🏢 ${r.partenaire}`}
+                    🏢 {r.partenaire}
                   </option>
                 ))}
               </select>

@@ -31,7 +31,20 @@ public class ExcelProcessingService {
 
     public List<MonthlyReport> getReportsByPeriod(String period) {
         List<MonthlyReport> reports = repository.findByPeriod(period);
-        if (reports.isEmpty()) {
+        boolean hasGlobal = false;
+
+        for (MonthlyReport r : reports) {
+            // FIX : Convertir les anciens rapports sans partenaire en "GLOBAL"
+            if (r.getPartenaire() == null || r.getPartenaire().trim().isEmpty()) {
+                r.setPartenaire("GLOBAL");
+            }
+            if ("GLOBAL".equals(r.getPartenaire())) {
+                hasGlobal = true;
+            }
+        }
+
+        // S'il n'y a pas de rapport GLOBAL, on le crée
+        if (!hasGlobal) {
             MonthlyReport global = new MonthlyReport(period, "GLOBAL");
             repository.save(global);
             reports.add(global);
@@ -42,10 +55,15 @@ public class ExcelProcessingService {
     private Map<String, MonthlyReport> loadAllReportsForPeriod(String period) {
         List<MonthlyReport> list = repository.findByPeriod(period);
         Map<String, MonthlyReport> map = new HashMap<>();
-        if (list.isEmpty()) {
+
+        for (MonthlyReport r : list) {
+            String part = (r.getPartenaire() == null || r.getPartenaire().trim().isEmpty()) ? "GLOBAL" : r.getPartenaire();
+            r.setPartenaire(part); // Assure que c'est propre
+            map.put(part, r);
+        }
+
+        if (!map.containsKey("GLOBAL")) {
             map.put("GLOBAL", new MonthlyReport(period, "GLOBAL"));
-        } else {
-            for (MonthlyReport r : list) map.put(r.getPartenaire(), r);
         }
         return map;
     }
@@ -65,7 +83,7 @@ public class ExcelProcessingService {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
         Map<String, String> activePartners = kyntusApiService.getActivePartners();
 
-        for (MonthlyReport r : reports.values()) r.initDefaults(); // Reset Rang/TNH
+        for (MonthlyReport r : reports.values()) r.initDefaults();
 
         processGenericFile(file, record -> {
             String zoneStatutRaw = record.get("zone_statut prise");
@@ -74,8 +92,10 @@ public class ExcelProcessingService {
             String motfKoRaw = record.get("motf_ko_cr_inst_first_crinstall_mnt");
             String partenaire = extractPartner(record, activePartners);
 
+            // Toujours ajouter au GLOBAL (même si pas de partenaire)
             extractAndComputeRowRang(zoneStatutRaw, rangRdvRaw, statutCrRaw, motfKoRaw, reports.get("GLOBAL"));
 
+            // Ajouter spécifiquement au partenaire s'il existe et est ACTIF
             if (partenaire != null) {
                 MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> {
                     MonthlyReport r = new MonthlyReport(period, p);
