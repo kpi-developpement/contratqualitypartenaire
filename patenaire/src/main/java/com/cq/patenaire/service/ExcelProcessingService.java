@@ -9,6 +9,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -34,7 +35,6 @@ public class ExcelProcessingService {
         boolean hasGlobal = false;
 
         for (MonthlyReport r : reports) {
-            // FIX : Convertir les anciens rapports sans partenaire en "GLOBAL"
             if (r.getPartenaire() == null || r.getPartenaire().trim().isEmpty()) {
                 r.setPartenaire("GLOBAL");
             }
@@ -43,7 +43,6 @@ public class ExcelProcessingService {
             }
         }
 
-        // S'il n'y a pas de rapport GLOBAL, on le crée
         if (!hasGlobal) {
             MonthlyReport global = new MonthlyReport(period, "GLOBAL");
             repository.save(global);
@@ -52,13 +51,25 @@ public class ExcelProcessingService {
         return reports;
     }
 
+    // ==========================================
+    // NOUVEAU: SUPPRESSION DE PÉRIODE
+    // ==========================================
+    @Transactional
+    public void deleteReportsByPeriod(String period) {
+        List<MonthlyReport> reports = repository.findByPeriod(period);
+        if (!reports.isEmpty()) {
+            repository.deleteAll(reports);
+            log.info("Tous les rapports de la période {} ont été supprimés.", period);
+        }
+    }
+
     private Map<String, MonthlyReport> loadAllReportsForPeriod(String period) {
         List<MonthlyReport> list = repository.findByPeriod(period);
         Map<String, MonthlyReport> map = new HashMap<>();
 
         for (MonthlyReport r : list) {
             String part = (r.getPartenaire() == null || r.getPartenaire().trim().isEmpty()) ? "GLOBAL" : r.getPartenaire();
-            r.setPartenaire(part); // Assure que c'est propre
+            r.setPartenaire(part);
             map.put(part, r);
         }
 
@@ -76,9 +87,6 @@ public class ExcelProcessingService {
         return new ArrayList<>(reports.values());
     }
 
-    // ==========================================
-    // RACC
-    // ==========================================
     public List<MonthlyReport> processRangFile(MultipartFile file, String period) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
         Map<String, String> activePartners = kyntusApiService.getActivePartners();
@@ -92,10 +100,8 @@ public class ExcelProcessingService {
             String motfKoRaw = record.get("motf_ko_cr_inst_first_crinstall_mnt");
             String partenaire = extractPartner(record, activePartners);
 
-            // Toujours ajouter au GLOBAL (même si pas de partenaire)
             extractAndComputeRowRang(zoneStatutRaw, rangRdvRaw, statutCrRaw, motfKoRaw, reports.get("GLOBAL"));
 
-            // Ajouter spécifiquement au partenaire s'il existe et est ACTIF
             if (partenaire != null) {
                 MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> {
                     MonthlyReport r = new MonthlyReport(period, p);
@@ -228,9 +234,6 @@ public class ExcelProcessingService {
         return saveAndReturn(reports);
     }
 
-    // ==========================================
-    // SAV
-    // ==========================================
     public List<MonthlyReport> processSavFile(MultipartFile file, String period) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
         Map<String, String> activePartners = kyntusApiService.getActivePartners();
@@ -479,9 +482,6 @@ public class ExcelProcessingService {
         return "UNKNOWN";
     }
 
-    // ==========================================
-    // GENERIC FILE PARSER
-    // ==========================================
     private interface RecordProcessor {
         void process(Map<String, String> recordMap);
     }

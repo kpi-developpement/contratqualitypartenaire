@@ -1,10 +1,21 @@
 import { ReportResponse } from "@/types";
 
-const API_BASE_URL = "http://10.10.10.25:6355/api/v1";
+const API_BASE_URL = "http://localhost:6355/api/v1";
 
 export const fetchReport = async (period: string): Promise<ReportResponse[]> => {
   const response = await fetch(`${API_BASE_URL}/excel/report/${period}`);
   if (!response.ok) throw new Error("Erreur de récupération du rapport");
+  return response.json();
+};
+
+export const deleteReport = async (period: string) => {
+  const response = await fetch(`${API_BASE_URL}/excel/report/${period}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.message || "Erreur lors de la suppression");
+  }
   return response.json();
 };
 

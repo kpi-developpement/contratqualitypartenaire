@@ -31,6 +31,21 @@ public class ExcelController {
         return ResponseEntity.ok(excelProcessingService.getReportsByPeriod(period));
     }
 
+    @DeleteMapping("/report/{period}")
+    public ResponseEntity<?> deleteReport(@PathVariable String period) {
+        try {
+            excelProcessingService.deleteReportsByPeriod(period);
+            Map<String, String> res = new HashMap<>();
+            res.put("message", "Données supprimées avec succès pour " + period);
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            log.error("Erreur lors de la suppression: {}", e.getMessage());
+            Map<String, String> err = new HashMap<>();
+            err.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
+        }
+    }
+
     @PostMapping("/upload/rang")
     public ResponseEntity<?> uploadRangFile(@RequestParam("file") MultipartFile file, @RequestParam("period") String period) { return handleUpload(file, period, "RANG"); }
 

@@ -8,8 +8,8 @@ import FadeIn from "@/components/animations/FadeIn";
 import SlideUp from "@/components/animations/SlideUp";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { ReportResponse } from "@/types";
-import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown, Network, Crop, Zap, Wrench, ClipboardCheck, Timer } from "lucide-react";
-import { fetchReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile, uploadPtoFile, uploadCadrageFile, uploadGemNokFile, uploadSavFile, uploadAuditFile, uploadReeFile } from "@/services/api";
+import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown, Network, Crop, Zap, Wrench, ClipboardCheck, Timer, Trash2, Loader2 } from "lucide-react";
+import { fetchReport, deleteReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile, uploadPtoFile, uploadCadrageFile, uploadGemNokFile, uploadSavFile, uploadAuditFile, uploadReeFile } from "@/services/api";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
@@ -17,6 +17,7 @@ export default function Home() {
   const [allReports, setAllReports] = useState<ReportResponse[]>([]);
   const [selectedPartner, setSelectedPartner] = useState<string>("GLOBAL");
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [category, setCategory] = useState<'RACC' | 'SAV'>('RACC');
 
@@ -27,13 +28,27 @@ export default function Home() {
   const handleSuccess = (data: ReportResponse[]) => {
     setAllReports(data);
     setError(null);
-    // Si le partenaire actuel n'est pas dans la liste des résultats, on reset à GLOBAL
     if (!data.find(r => (r.partenaire || 'GLOBAL') === selectedPartner)) {
       setSelectedPartner("GLOBAL");
     }
   };
 
-  // FIX: On sécurise la sélection. S'il n'y a pas de partenaire on fallback sur GLOBAL
+  const handleDeletePeriod = async () => {
+    if (confirm(`⚠️ ATTENTION ⚠️\nÊtes-vous sûr de vouloir supprimer TOUTES les données (RACC et SAV) pour la période ${period} ?\nCette action est irréversible.`)) {
+      setIsDeleting(true);
+      try {
+        await deleteReport(period);
+        setAllReports([]);
+        setSelectedPartner("GLOBAL");
+        setError(null);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
+
   const currentReport = allReports.find(r => (r.partenaire || 'GLOBAL') === selectedPartner) || allReports.find(r => !r.partenaire || r.partenaire === 'GLOBAL') || null;
   const hasData = !!currentReport && Object.keys(currentReport).length > 0;
 
@@ -52,14 +67,27 @@ export default function Home() {
           </h1>
 
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm border border-slate-200/80">
-              <span className="font-bold text-slate-500 text-sm uppercase tracking-wide">Période :</span>
-              <input 
-                type="month" 
-                value={period} 
-                onChange={(e) => setPeriod(e.target.value)}
-                className="bg-transparent text-slate-800 font-bold focus:outline-none cursor-pointer"
-              />
+            
+            {/* Input Période + Bouton Supprimer */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm border border-slate-200/80">
+                <span className="font-bold text-slate-500 text-sm uppercase tracking-wide">Période :</span>
+                <input 
+                  type="month" 
+                  value={period} 
+                  onChange={(e) => setPeriod(e.target.value)}
+                  className="bg-transparent text-slate-800 font-bold focus:outline-none cursor-pointer"
+                />
+              </div>
+              
+              <button 
+                onClick={handleDeletePeriod}
+                disabled={isDeleting || allReports.length === 0}
+                className="p-3 bg-white rounded-full border border-slate-200 shadow-sm text-rose-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+                title="Supprimer TOUTES les données de cette période"
+              >
+                {isDeleting ? <Loader2 size={20} className="animate-spin" /> : <Trash2 size={20} className="group-hover:scale-110 transition-transform" />}
+              </button>
             </div>
 
             <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm border border-slate-200/80">
@@ -69,7 +97,6 @@ export default function Home() {
                 onChange={(e) => setSelectedPartner(e.target.value)}
                 className="bg-transparent text-blue-700 font-black focus:outline-none cursor-pointer outline-none"
               >
-                {/* On s'assure d'avoir toujours l'option GLOBAL */}
                 <option value="GLOBAL">🌍 Tous (Global)</option>
                 {allReports.filter(r => (r.partenaire || 'GLOBAL') !== 'GLOBAL').map(r => (
                   <option key={r.partenaire} value={r.partenaire!}>
