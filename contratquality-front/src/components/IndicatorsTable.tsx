@@ -14,11 +14,12 @@ import { calculateBonus } from "@/services/api";
 
 interface IndicatorsTableProps {
   period: string;
+  partner: string;
   category: 'RACC' | 'SAV';
   reportData: ReportResponse;
 }
 
-export default function IndicatorsTable({ period, category, reportData }: IndicatorsTableProps) {
+export default function IndicatorsTable({ period, partner, category, reportData }: IndicatorsTableProps) {
   
   const [viewMode, setViewMode] = useState<'data' | 'bonus'>('data');
   const [filterMode, setFilterMode] = useState<'ALL' | 'R1' | 'R2' | 'AUTRES'>('ALL');
@@ -58,10 +59,10 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
     // SAV
     "SAV_PERF": { min: "81", max: "88", bMin: "-2", bMax: "2" },
     "SAV_SECURISATION": { min: "3", max: "0", bMin: "-2", bMax: "2" },
-    "AUDIT": { min: "2", max: "0", bMin: "-1", bMax: "1" }, // AUDIT en brut !
+    "AUDIT": { min: "2", max: "0", bMin: "-1", bMax: "1" },
     "SAV_SATCLI": { min: "10", max: "0", bMin: "-2", bMax: "2" },
     "SAV_CCR": { min: "2", max: "1", bMin: "-3", bMax: "3" },
-    "REE": { min: "7", max: "2", bMin: "-2", bMax: "2" }, // REE en brut !
+    "REE": { min: "7", max: "2", bMin: "-2", bMax: "2" },
     "SAV_TNH": { min: "5", max: "2", bMin: "-2", bMax: "1" },
   });
 
@@ -69,9 +70,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
   const [isCalculating, setIsCalculating] = useState(false);
 
   const formatPercent = (value: number) => (value * 100).toFixed(2) + "%";
-  
   const formatPercentOrRaw = (id: string, value: number) => {
-    // Si c'est AUDIT ou REE on affiche en brut
     if (id === 'REE' || id === 'AUDIT') return value.toFixed(4);
     return (value * 100).toFixed(2) + "%";
   };
@@ -118,14 +117,14 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
     const handler = setTimeout(async () => {
       setIsCalculating(true);
       try {
-        const data = await calculateBonus(period, payload);
+        const data = await calculateBonus(period, partner, payload);
         if (data) setBonusResults(data);
       } catch (error) { console.error("Erreur API Bonus:", error); } 
       finally { setIsCalculating(false); }
     }, 500);
 
     return () => clearTimeout(handler);
-  }, [targets, period, viewMode, category]);
+  }, [targets, period, partner, viewMode, category]);
 
   const handleTargetChange = (id: string, field: string, value: string) => {
     setTargets(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
@@ -183,7 +182,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
             <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Tableau de Bord Unifié - {category}</h2>
             <p className="text-xs text-slate-500 font-semibold mt-1 flex items-center gap-1.5">
               <span className={cn("w-2 h-2 rounded-full", viewMode === 'data' ? "bg-blue-500" : "bg-purple-500")}></span>
-              {viewMode === 'data' ? 'Volume et Résultats Bruts' : `Simulation Bonus - Période ${period}`}
+              {viewMode === 'data' ? `Résultats Bruts - ${partner}` : `Simulation Bonus - Période ${period}`}
             </p>
           </div>
         </div>
@@ -325,7 +324,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                 <th className="py-4 px-6 font-black text-purple-800 tracking-widest text-[10px] uppercase text-center border-r border-purple-100/50 w-28">Bonus Min</th>
                 <th className="py-4 px-6 font-black text-purple-800 tracking-widest text-[10px] uppercase text-center border-r border-purple-100/50 w-28">Bonus Max</th>
                 <th className="py-4 px-6 font-black text-purple-800 tracking-widest text-[10px] uppercase text-center bg-purple-100/40">
-                  <div className="flex items-center justify-center gap-2">Bonus Ind.</div>
+                  <div className="flex items-center justify-center gap-2">Bonus Ind. {isCalculating && <Loader2 size={12} className="animate-spin text-purple-600" />}</div>
                 </th>
               </tr>
             </thead>
@@ -366,12 +365,12 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/10"><span className="font-bold text-blue-600 text-xs">{formatPercent(pdm)}</span></td>
                     
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
+                      <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].min} onChange={(e) => handleTargetChange(row.id, 'min', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
+                      <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].max} onChange={(e) => handleTargetChange(row.id, 'max', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>

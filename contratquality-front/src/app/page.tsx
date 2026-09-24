@@ -14,21 +14,26 @@ import { cn } from "@/lib/utils";
 
 export default function Home() {
   const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
-  const [reportData, setReportData] = useState<ReportResponse | null>(null);
+  const [allReports, setAllReports] = useState<ReportResponse[]>([]);
+  const [selectedPartner, setSelectedPartner] = useState<string>("GLOBAL");
   const [error, setError] = useState<string | null>(null);
   
   const [category, setCategory] = useState<'RACC' | 'SAV'>('RACC');
 
   useEffect(() => {
-    fetchReport(period).then(data => setReportData(data)).catch(() => setReportData(null));
+    fetchReport(period).then(data => setAllReports(data)).catch(() => setAllReports([]));
   }, [period]);
 
-  const handleSuccess = (data: any) => {
-    setReportData(data);
+  const handleSuccess = (data: ReportResponse[]) => {
+    setAllReports(data);
     setError(null);
+    if (!data.find(r => r.partenaire === selectedPartner)) {
+      setSelectedPartner("GLOBAL");
+    }
   };
 
-  const hasData = !!reportData && Object.keys(reportData).length > 0;
+  const currentReport = allReports.find(r => r.partenaire === selectedPartner) || null;
+  const hasData = !!currentReport && Object.keys(currentReport).length > 0;
 
   return (
     <main className="min-h-screen relative font-sans selection:bg-blue-100 bg-transparent">
@@ -53,6 +58,21 @@ export default function Home() {
                 onChange={(e) => setPeriod(e.target.value)}
                 className="bg-transparent text-slate-800 font-bold focus:outline-none cursor-pointer"
               />
+            </div>
+
+            <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm border border-slate-200/80">
+              <span className="font-bold text-slate-500 text-sm uppercase tracking-wide">Partenaire :</span>
+              <select 
+                value={selectedPartner} 
+                onChange={(e) => setSelectedPartner(e.target.value)}
+                className="bg-transparent text-blue-700 font-black focus:outline-none cursor-pointer outline-none"
+              >
+                {allReports.map(r => (
+                  <option key={r.partenaire} value={r.partenaire!}>
+                    {r.partenaire === 'GLOBAL' ? '🌍 Tous (Global)' : `🏢 ${r.partenaire}`}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex p-1 bg-white rounded-full border border-slate-200 shadow-sm">
@@ -110,7 +130,8 @@ export default function Home() {
             <IndicatorsTable 
               period={period}
               category={category}
-              reportData={reportData!}
+              partner={selectedPartner}
+              reportData={currentReport!}
             />
           </SlideUp>
         )}

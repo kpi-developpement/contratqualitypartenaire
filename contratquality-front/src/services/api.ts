@@ -2,13 +2,13 @@ import { ReportResponse } from "@/types";
 
 const API_BASE_URL = "http://10.10.10.25:6355/api/v1";
 
-export const fetchReport = async (period: string): Promise<ReportResponse> => {
+export const fetchReport = async (period: string): Promise<ReportResponse[]> => {
   const response = await fetch(`${API_BASE_URL}/excel/report/${period}`);
   if (!response.ok) throw new Error("Erreur de récupération du rapport");
   return response.json();
 };
 
-const uploadGeneric = async (endpoint: string, file: File, period: string): Promise<ReportResponse> => {
+const uploadGeneric = async (endpoint: string, file: File, period: string): Promise<ReportResponse[]> => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("period", period);
@@ -36,8 +36,8 @@ export const uploadAuditFile = (file: File, period: string) => uploadGeneric("au
 export const uploadReeFile = (file: File, period: string) => uploadGeneric("ree", file, period);
 export const uploadSavFile = (file: File, period: string) => uploadGeneric("sav", file, period);
 
-export const calculateBonus = async (period: string, configPayload: any) => {
-  const response = await fetch(`${API_BASE_URL}/bonus/calculate/${period}`, {
+export const calculateBonus = async (period: string, partner: string, configPayload: any) => {
+  const response = await fetch(`${API_BASE_URL}/bonus/calculate/${period}/${partner}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(configPayload),

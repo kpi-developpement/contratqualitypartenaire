@@ -25,24 +25,22 @@ public class BonusController {
         this.bonusCalculationService = bonusCalculationService;
     }
 
-    @PostMapping("/calculate/{period}")
+    @PostMapping("/calculate/{period}/{partenaire}")
     public ResponseEntity<?> calculateBonus(
             @PathVariable String period,
+            @PathVariable String partenaire,
             @RequestBody BonusConfigRequest configRequest) {
 
-        log.info("Requête de calcul de bonus reçue pour la période : {}", period);
-
-        if (period == null || period.trim().isEmpty() || configRequest == null || configRequest.getTargets() == null) {
+        if (period == null || period.trim().isEmpty() || partenaire == null || configRequest == null) {
             Map<String, String> err = new HashMap<>();
-            err.put("message", "Période invalide ou configuration manquante.");
+            err.put("message", "Paramètres invalides.");
             return ResponseEntity.badRequest().body(err);
         }
 
         try {
-            Map<String, BonusResultItem> result = bonusCalculationService.calculateBonus(period, configRequest);
+            Map<String, BonusResultItem> result = bonusCalculationService.calculateBonus(period + "_" + partenaire, configRequest);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            log.error("Erreur lors du calcul du bonus : {}", e.getMessage(), e);
             Map<String, String> err = new HashMap<>();
             err.put("message", "Erreur : " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);

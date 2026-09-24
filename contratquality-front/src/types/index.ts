@@ -5,7 +5,9 @@ export interface IndicatorResult {
 }
 
 export interface ReportResponse {
+  id?: string;
   period?: string;
+  partenaire?: string;
   
   perf_rang_1?: Record<string, Record<string, IndicatorResult>>;
   perf_rang_2?: Record<string, IndicatorResult>;

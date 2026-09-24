@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -26,8 +27,8 @@ public class ExcelController {
     }
 
     @GetMapping("/report/{period}")
-    public ResponseEntity<MonthlyReport> getReport(@PathVariable String period) {
-        return ResponseEntity.ok(excelProcessingService.getReportByPeriod(period));
+    public ResponseEntity<List<MonthlyReport>> getReport(@PathVariable String period) {
+        return ResponseEntity.ok(excelProcessingService.getReportsByPeriod(period));
     }
 
     @PostMapping("/upload/rang")
@@ -65,7 +66,7 @@ public class ExcelController {
         }
 
         try {
-            MonthlyReport result;
+            List<MonthlyReport> result;
             if ("RANG".equals(type)) result = excelProcessingService.processRangFile(file, period);
             else if ("SATCLI".equals(type)) result = excelProcessingService.processSatcliFile(file, period);
             else if ("PLAINTE".equals(type)) result = excelProcessingService.processPlainteFile(file, period);

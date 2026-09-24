@@ -15,9 +15,11 @@ import java.util.Map;
 public class MonthlyReport {
 
     @Id
-    private String period;
+    private String id; // Format: "2026-07_GLOBAL" ou "2026-07_SOGETREL"
 
-    // ================= RACC =================
+    private String period;
+    private String partenaire; // "GLOBAL" ou le nom de l'entreprise
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Map<String, IndicatorResult>> perfRang1 = new HashMap<>();
@@ -85,8 +87,10 @@ public class MonthlyReport {
 
     public MonthlyReport() {}
 
-    public MonthlyReport(String period) {
+    public MonthlyReport(String period, String partenaire) {
+        this.id = period + "_" + partenaire;
         this.period = period;
+        this.partenaire = partenaire;
         initDefaults();
     }
 
