@@ -23,7 +23,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
   const [viewMode, setViewMode] = useState<'data' | 'bonus'>('data');
   const [filterMode, setFilterMode] = useState<'ALL' | 'R1' | 'R2' | 'AUTRES'>('ALL');
 
-  // Récupération des données
   const rang1 = reportData?.perf_rang1 || reportData?.perf_rang_1 || reportData?.perfRang1;
   const rang2 = reportData?.perf_rang2 || reportData?.perf_rang_2 || reportData?.perfRang2;
   const tnh = reportData?.tnh;
@@ -56,13 +55,13 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
     "CADRAGE": { min: "2", max: "1", bMin: "-2", bMax: "1" },
     "INCOHERENCE_PTO": { min: "7", max: "9", bMin: "0", bMax: "2" },
 
-    // SAV (Valeurs initiales selon l'image)
-    "SAV_PERF": { min: "81", max: "88", bMin: "-2", bMax: "2" }, // Taux de CR OK
+    // SAV
+    "SAV_PERF": { min: "81", max: "88", bMin: "-2", bMax: "2" },
     "SAV_SECURISATION": { min: "3", max: "0", bMin: "-2", bMax: "2" },
-    "AUDIT": { min: "2", max: "0", bMin: "-1", bMax: "1" },
-    "SAV_SATCLI": { min: "10", max: "0", bMin: "-2", bMax: "2" }, // Clients très insatisfaits
-    "SAV_CCR": { min: "2", max: "1", bMin: "-3", bMax: "3" }, // Conformité CR
-    "REE": { min: "7", max: "2", bMin: "-2", bMax: "2" },
+    "AUDIT": { min: "2", max: "0", bMin: "-1", bMax: "1" }, // AUDIT en brut !
+    "SAV_SATCLI": { min: "10", max: "0", bMin: "-2", bMax: "2" },
+    "SAV_CCR": { min: "2", max: "1", bMin: "-3", bMax: "3" },
+    "REE": { min: "7", max: "2", bMin: "-2", bMax: "2" }, // REE en brut !
     "SAV_TNH": { min: "5", max: "2", bMin: "-2", bMax: "1" },
   });
 
@@ -70,8 +69,10 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
   const [isCalculating, setIsCalculating] = useState(false);
 
   const formatPercent = (value: number) => (value * 100).toFixed(2) + "%";
+  
   const formatPercentOrRaw = (id: string, value: number) => {
-    if (id === 'REE') return value.toFixed(4); // Ex: 4.7486
+    // Si c'est AUDIT ou REE on affiche en brut
+    if (id === 'REE' || id === 'AUDIT') return value.toFixed(4);
     return (value * 100).toFixed(2) + "%";
   };
 
@@ -136,7 +137,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
     return { bar: "bg-rose-400", text: "text-rose-700", badge: "bg-rose-50 border-rose-200", dot: "bg-rose-500" };
   };
 
-  // ------------------ DÉFINITIONS DES LIGNES RACC ------------------
   const rowsDefRaccR1R2 = [
     { id: "PLP-A", cat: "Perf 1er RDV PLP", zone: "Zone A", type: "R1", act: "PLP", z: "A", icon: <Wifi size={14} className="text-blue-500" /> },
     { id: "PLP-B", cat: "Perf 1er RDV PLP", zone: "Zone B", type: "R1", act: "PLP", z: "B", icon: <Wifi size={14} className="text-blue-500" /> },
@@ -162,21 +162,18 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
     { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-pink-400" />, colorClass: "bg-pink-500", isRaw: false },
   ];
 
-  // ------------------ DÉFINITIONS DES LIGNES SAV ------------------
   const rowsDefSav = [
     { id: "SAV_PERF", cat: "Taux de CR OK", stat: savPerf, icon: <CheckCircle2 size={20} className="text-emerald-400" />, colorClass: "bg-emerald-500", isRaw: false },
     { id: "SAV_SECURISATION", cat: "Sécurisation de RDV", stat: savSecurisation, icon: <ShieldCheck size={20} className="text-blue-400" />, colorClass: "bg-blue-500", isRaw: false },
-    { id: "AUDIT", cat: "Délai de traitement audit", stat: audit, icon: <ClipboardCheck size={20} className="text-fuchsia-400" />, colorClass: "bg-fuchsia-500", isRaw: false },
+    { id: "AUDIT", cat: "Délai de traitement audit", stat: audit, icon: <ClipboardCheck size={20} className="text-fuchsia-400" />, colorClass: "bg-fuchsia-500", isRaw: true },
     { id: "SAV_SATCLI", cat: "Clients très insatisfait", stat: savSatcli, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", isRaw: false },
     { id: "SAV_CCR", cat: "Conformité CR", stat: savCcr, icon: <FileCheck size={20} className="text-amber-400" />, colorClass: "bg-amber-500", isRaw: false },
-    { id: "REE", cat: "Délai de traitement des remises en état", stat: ree, icon: <Timer size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: true },
-    { id: "SAV_TNH", cat: "Taux de RDV non honoré (SAV)", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false }
+    { id: "REE", cat: "Délai traitement remises en état", stat: ree, icon: <Timer size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: true },
+    { id: "SAV_TNH", cat: "Taux de RDV non honoré", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false }
   ];
 
   return (
     <div className="w-full bg-white rounded-[1.5rem] shadow-[0_10px_40px_rgb(0,0,0,0.06)] border border-slate-200/80 overflow-hidden relative min-h-[600px]">
-      
-      {/* HEADER LUXE */}
       <div className="px-6 md:px-8 py-5 border-b border-slate-100 bg-white flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
         <div className="flex items-center gap-4">
           <div className={cn("p-3.5 rounded-2xl shadow-sm border transition-colors", viewMode === 'data' ? "bg-slate-900 border-slate-800 text-white" : "bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-100 text-purple-600")}>
@@ -191,7 +188,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
           </div>
         </div>
 
-        {/* FILTRES PAR INDICATEURS (Visible only for RACC) */}
         {category === 'RACC' && (
           <div className="flex p-1 bg-slate-50 rounded-xl border border-slate-200/60 shadow-inner">
             {['ALL', 'R1', 'R2', 'AUTRES'].map((f) => (
@@ -202,7 +198,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
           </div>
         )}
 
-        {/* TOGGLE SWITCH DATA/BONUS */}
         <div className="flex p-1.5 bg-slate-100/80 rounded-xl border border-slate-200/60 shadow-inner">
           <button onClick={() => setViewMode('data')} className={cn("relative px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 z-10 flex items-center gap-2", viewMode === 'data' ? "text-slate-800" : "text-slate-500 hover:text-slate-700")}>
             {viewMode === 'data' && <motion.div layoutId="activeTab" className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-slate-200/50 -z-10" />}
@@ -215,10 +210,7 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
         </div>
       </div>
       
-      {/* CONTAINER DES TABLES */}
       <div className="overflow-x-auto relative">
-
-        {/* ======================= MODE DATA ======================= */}
         <div className={cn("transition-opacity duration-300", viewMode === 'data' ? "opacity-100 block" : "opacity-0 hidden")}>
           <table className="w-full text-sm text-left border-collapse min-w-[1000px]">
             <thead>
@@ -233,7 +225,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
             </thead>
             <tbody className="bg-white">
               
-              {/* RANG 1 & 2 DATA (Only for RACC) */}
               {category === 'RACC' && (filterMode === 'ALL' || filterMode === 'R1' || filterMode === 'R2') && rowsDefRaccR1R2.map((row, index) => {
                 if (filterMode === 'R1' && row.type !== 'R1') return null;
                 if (filterMode === 'R2' && row.type !== 'R2') return null;
@@ -265,18 +256,19 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     <td className="py-4 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-600 font-bold text-xs border border-slate-200/60 shadow-sm">Zone {row.zone.replace('Zone ', '')}</span></td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-800 text-[15px]">{stats.num}</td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-500 text-[15px]">{stats.denum}</td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 border-b border-slate-100">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <span className={cn("px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2", styles.badge, styles.text)}><div className={cn("w-1.5 h-1.5 rounded-full", styles.dot)}></div>{formatPercent(stats.resultat)}</span>
-                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden"><div className={cn("h-full rounded-full transition-all duration-1000", styles.bar)} style={{ width: `${percentValue}%` }}></div></div>
+                        <span className="px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 bg-slate-100 border-slate-200 text-slate-700">
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>{formatPercent(stats.resultat)}
+                        </span>
+                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1"><div className="h-full rounded-full transition-all duration-1000 bg-slate-400" style={{ width: `${stats.resultat * 100}%` }}></div></div>
                       </div>
                     </td>
                   </tr>
                 );
               })}
 
-              {/* AUTRES INDICATEURS DATA (RACC ou SAV) */}
-              {(category === 'RACC' ? ((filterMode === 'ALL' || filterMode === 'AUTRES') ? rowsDefRaccAutres : []) : rowsDefSav).map((row) => {
+              {(category === 'RACC' ? (filterMode === 'ALL' || filterMode === 'AUTRES') ? rowsDefRaccAutres : [] : rowsDefSav).map((row) => {
                 const stats = row.stat;
                 if (!stats || (stats.num === 0 && stats.denum === 0)) return null;
 
@@ -320,7 +312,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
           </table>
         </div>
 
-        {/* ======================= MODE BONUS ======================= */}
         <div className={cn("transition-opacity duration-300", viewMode === 'bonus' ? "opacity-100 block" : "opacity-0 hidden")}>
           <table className="w-full text-sm text-left border-collapse min-w-[1100px]">
             <thead>
@@ -334,13 +325,12 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                 <th className="py-4 px-6 font-black text-purple-800 tracking-widest text-[10px] uppercase text-center border-r border-purple-100/50 w-28">Bonus Min</th>
                 <th className="py-4 px-6 font-black text-purple-800 tracking-widest text-[10px] uppercase text-center border-r border-purple-100/50 w-28">Bonus Max</th>
                 <th className="py-4 px-6 font-black text-purple-800 tracking-widest text-[10px] uppercase text-center bg-purple-100/40">
-                  <div className="flex items-center justify-center gap-2">Bonus Ind. {isCalculating && <Loader2 size={12} className="animate-spin text-purple-600" />}</div>
+                  <div className="flex items-center justify-center gap-2">Bonus Ind.</div>
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white">
               
-              {/* RANG 1 & 2 BONUS (Only for RACC) */}
               {category === 'RACC' && (filterMode === 'ALL' || filterMode === 'R1' || filterMode === 'R2') && rowsDefRaccR1R2.map((row, index) => {
                 if (filterMode === 'R1' && row.type !== 'R1') return null;
                 if (filterMode === 'R2' && row.type !== 'R2') return null;
@@ -376,12 +366,12 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/10"><span className="font-bold text-blue-600 text-xs">{formatPercent(pdm)}</span></td>
                     
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].min} onChange={(e) => handleTargetChange(row.id, 'min', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].max} onChange={(e) => handleTargetChange(row.id, 'max', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
@@ -402,7 +392,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                 );
               })}
 
-              {/* AUTRES INDICATEURS BONUS (RACC ou SAV) */}
               {(category === 'RACC' ? (filterMode === 'ALL' || filterMode === 'AUTRES') ? rowsDefRaccAutres : [] : rowsDefSav).map((row) => {
                 const stat = row.stat;
                 if (!stat || (stat.num === 0 && stat.denum === 0)) return null;
@@ -452,7 +441,6 @@ export default function IndicatorsTable({ period, category, reportData }: Indica
                 );
               })}
 
-              {/* TOTAL BONUS FOOTER */}
               <tr className="bg-emerald-50 border-t-2 border-emerald-200/80">
                 <td colSpan={8} className="py-6 px-6 text-right font-black text-emerald-900 text-[16px] uppercase tracking-wider">
                   Total Bonus {category}

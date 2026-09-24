@@ -48,8 +48,8 @@ public class BonusCalculationService {
                 if (totalDenumR1 > 0) pdm = stat.getDenum() / totalDenumR1;
             }
 
-            // Gestion de l'indicateur "Brut" (REE)
-            double divisor = indicatorId.equals("REE") ? 1.0 : 100.0;
+            // Gestion des indicateurs "Bruts" (REE et AUDIT) pour ne pas diviser par 100
+            double divisor = (indicatorId.equals("REE") || indicatorId.equals("AUDIT")) ? 1.0 : 100.0;
             double tMin = target.getPointMin() / divisor;
             double tMax = target.getPointMax() / divisor;
 
