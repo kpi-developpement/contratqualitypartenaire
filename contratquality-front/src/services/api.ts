@@ -1,6 +1,7 @@
 import { ReportResponse } from "@/types";
 
-const API_BASE_URL = "http://localhost:6355/api/v1";
+// L'URL m-pointya l'Serveur dialk 100% (10.10.10.25)
+const API_BASE_URL = "http://10.10.10.25:6355/api/v1";
 
 export const fetchReport = async (period: string): Promise<ReportResponse[]> => {
   const response = await fetch(`${API_BASE_URL}/excel/report/${period}`);
@@ -27,16 +28,26 @@ const uploadGeneric = async (endpoint: string, file: File, period: string): Prom
   return response.json();
 };
 
+// =====================================
+// RACC ENDPOINTS
+// =====================================
 export const uploadRangFile = (file: File, period: string) => uploadGeneric("rang", file, period);
 export const uploadSatcliFile = (file: File, period: string) => uploadGeneric("satcli", file, period);
 export const uploadPlainteFile = (file: File, period: string) => uploadGeneric("plainte", file, period);
 export const uploadPtoFile = (file: File, period: string) => uploadGeneric("pto", file, period);
 export const uploadCadrageFile = (file: File, period: string) => uploadGeneric("cadrage", file, period);
 export const uploadGemNokFile = (file: File, period: string) => uploadGeneric("gemnok", file, period);
+
+// =====================================
+// SAV ENDPOINTS
+// =====================================
 export const uploadAuditFile = (file: File, period: string) => uploadGeneric("audit", file, period);
 export const uploadReeFile = (file: File, period: string) => uploadGeneric("ree", file, period);
 export const uploadSavFile = (file: File, period: string) => uploadGeneric("sav", file, period);
 
+// =====================================
+// BONUS CALCULATOR
+// =====================================
 export const calculateBonus = async (period: string, partner: string, configPayload: any) => {
   const response = await fetch(`${API_BASE_URL}/bonus/calculate/${period}/${partner}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(configPayload),
