@@ -25,8 +25,25 @@ export default function IndicatorsTable({ period, partner, category: initialCate
   const rang1 = reportData?.perf_rang1 || reportData?.perf_rang_1 || reportData?.perfRang1;
   const rang2 = reportData?.perf_rang2 || reportData?.perf_rang_2 || reportData?.perfRang2;
   
-  // FIX : On garantit qu'on retourne toujours un objet stat valide même s'il est vide
-  const getSafeStat = (stat: any): IndicatorResult => stat || { num: 0, denum: 0, resultat: 0.0 };
+  // ANTI-CRASH BLINDAGE
+  const getSafeStat = (stat: any): IndicatorResult => {
+    return {
+      num: Number(stat?.num) || 0,
+      denum: Number(stat?.denum) || 0,
+      resultat: Number(stat?.resultat) || 0.0
+    };
+  };
+
+  const formatPercent = (value: any) => {
+    const v = Number(value) || 0;
+    return (v * 100).toFixed(2) + "%";
+  };
+
+  const formatPercentOrRaw = (id: string, value: any) => {
+    const v = Number(value) || 0;
+    if (id === 'REE' || id === 'AUDIT') return v.toFixed(4);
+    return (v * 100).toFixed(2) + "%";
+  };
 
   const tnh = getSafeStat(reportData?.tnh);
   const satcliOk = getSafeStat(reportData?.satcli_ok || reportData?.satcliOk);
@@ -47,35 +64,30 @@ export default function IndicatorsTable({ period, partner, category: initialCate
   const [bonusResults, setBonusResults] = useState<Record<string, any>>({});
   const [isCalculating, setIsCalculating] = useState(false);
 
-  const formatPercent = (value: number) => (value * 100).toFixed(2) + "%";
-  const formatPercentOrRaw = (id: string, value: number) => {
-    if (id === 'REE' || id === 'AUDIT') return value.toFixed(4);
-    return (value * 100).toFixed(2) + "%";
-  };
-
   const activities = ["PLP", "Construction", "Hotline"];
   const zones = ["A", "B", "C"];
 
   const totalDenumR1 = useMemo(() => {
     let sum = 0;
-    if (rang1) activities.forEach(act => zones.forEach(z => sum += (rang1[act]?.[z]?.denum || 0)));
+    if (rang1) activities.forEach(act => zones.forEach(z => sum += (Number(rang1[act]?.[z]?.denum) || 0)));
     return sum;
   }, [rang1]);
 
   const totalDenumR2 = useMemo(() => {
     let sum = 0;
-    if (rang2) zones.forEach(z => sum += (rang2[z]?.denum || 0));
+    if (rang2) zones.forEach(z => sum += (Number(rang2[z]?.denum) || 0));
     return sum;
   }, [rang2]);
 
   const totalBonus = useMemo(() => {
     let sum = 0;
-    Object.values(bonusResults).forEach((res: any) => {
-      if (category === 'RACC' && !res.indicatorId.startsWith('SAV_') && res.indicatorId !== 'AUDIT' && res.indicatorId !== 'REE') {
-        sum += (res?.bonusCalcule ?? res?.bonus_calcule ?? 0);
+    Object.values(bonusResults || {}).forEach((res: any) => {
+      const b = Number(res?.bonusCalcule ?? res?.bonus_calcule ?? 0);
+      if (category === 'RACC' && !res?.indicatorId?.startsWith('SAV_') && res?.indicatorId !== 'AUDIT' && res?.indicatorId !== 'REE') {
+        sum += b;
       }
-      if (category === 'SAV' && (res.indicatorId.startsWith('SAV_') || res.indicatorId === 'AUDIT' || res.indicatorId === 'REE')) {
-        sum += (res?.bonusCalcule ?? res?.bonus_calcule ?? 0);
+      if (category === 'SAV' && (res?.indicatorId?.startsWith('SAV_') || res?.indicatorId === 'AUDIT' || res?.indicatorId === 'REE')) {
+        sum += b;
       }
     });
     return sum;
@@ -111,7 +123,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
   const getScoreStyles = (value: number) => {
     if (value >= 0.8) return { bar: "bg-emerald-400", text: "text-emerald-700", badge: "bg-emerald-50 border-emerald-200", dot: "bg-emerald-500" };
     if (value >= 0.5) return { bar: "bg-amber-400", text: "text-amber-700", badge: "bg-amber-50 border-amber-200", dot: "bg-amber-500" };
-    return { bar: "bg-slate-300", text: "text-slate-600", badge: "bg-slate-50 border-slate-200", dot: "bg-slate-400" };
+    return { bar: "bg-red-400", text: "text-red-700", badge: "bg-red-50 border-red-200", dot: "bg-red-500" };
   };
 
   const rowsDefRaccR1R2 = [
@@ -131,27 +143,26 @@ export default function IndicatorsTable({ period, partner, category: initialCate
 
   const rowsDefRaccAutres = [
     { id: "SATCLI_OK", cat: "Satcli (sur RDV OK)", stat: satcliOk, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", isRaw: false },
-    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: satcliNok, icon: <Frown size={20} className="text-orange-400" />, colorClass: "bg-orange-500", isRaw: false },
-    { id: "PLAINTE", cat: "Taux de plainte", stat: tauxPlainte, icon: <MessageSquareWarning size={20} className="text-rose-400" />, colorClass: "bg-rose-500", isRaw: false },
+    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: satcliNok, icon: <Frown size={20} className="text-orange-500" />, colorClass: "bg-orange-500", isRaw: false },
+    { id: "PLAINTE", cat: "Taux de plainte", stat: tauxPlainte, icon: <MessageSquareWarning size={20} className="text-red-500" />, colorClass: "bg-red-500", isRaw: false },
     { id: "GEM_NOK", cat: "Transf. des GEM en TVC", stat: gemNok, icon: <Zap size={20} className="text-cyan-400" />, colorClass: "bg-cyan-500", isRaw: false },
-    { id: "TNH", cat: "Taux de RDV non honoré", stat: tnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false },
-    { id: "CADRAGE", cat: "Conformité Cadrage", stat: cadrage, icon: <Crop size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: false },
-    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-pink-400" />, colorClass: "bg-pink-500", isRaw: false },
+    { id: "TNH", cat: "Taux de RDV non honoré", stat: tnh, icon: <AlertTriangle size={20} className="text-purple-500" />, colorClass: "bg-purple-500", isRaw: false },
+    { id: "CADRAGE", cat: "Conformité Cadrage", stat: cadrage, icon: <Crop size={20} className="text-indigo-500" />, colorClass: "bg-indigo-500", isRaw: false },
+    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-orange-600" />, colorClass: "bg-orange-600", isRaw: false },
   ];
 
   const rowsDefSav = [
-    { id: "SAV_PERF", cat: "Taux de CR OK", stat: savPerf, icon: <CheckCircle2 size={20} className="text-emerald-400" />, colorClass: "bg-emerald-500", isRaw: false },
-    { id: "SAV_SECURISATION", cat: "Sécurisation de RDV", stat: savSecurisation, icon: <ShieldCheck size={20} className="text-blue-400" />, colorClass: "bg-blue-500", isRaw: false },
-    { id: "AUDIT", cat: "Délai de traitement audit", stat: audit, icon: <ClipboardCheck size={20} className="text-fuchsia-400" />, colorClass: "bg-fuchsia-500", isRaw: true },
+    { id: "SAV_PERF", cat: "Taux de CR OK", stat: savPerf, icon: <CheckCircle2 size={20} className="text-emerald-500" />, colorClass: "bg-emerald-500", isRaw: false },
+    { id: "SAV_SECURISATION", cat: "Sécurisation de RDV", stat: savSecurisation, icon: <ShieldCheck size={20} className="text-blue-500" />, colorClass: "bg-blue-500", isRaw: false },
+    { id: "AUDIT", cat: "Délai de traitement audit", stat: audit, icon: <ClipboardCheck size={20} className="text-amber-500" />, colorClass: "bg-amber-500", isRaw: true },
     { id: "SAV_SATCLI", cat: "Clients très insatisfait", stat: savSatcli, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", isRaw: false },
     { id: "SAV_CCR", cat: "Conformité CR", stat: savCcr, icon: <FileCheck size={20} className="text-amber-400" />, colorClass: "bg-amber-500", isRaw: false },
-    { id: "REE", cat: "Délai traitement remises en état", stat: ree, icon: <Timer size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: true },
-    { id: "SAV_TNH", cat: "Taux de RDV non honoré", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false }
+    { id: "REE", cat: "Délai traitement remises en état", stat: ree, icon: <Timer size={20} className="text-indigo-500" />, colorClass: "bg-indigo-500", isRaw: true },
+    { id: "SAV_TNH", cat: "Taux de RDV non honoré", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-500" />, colorClass: "bg-purple-500", isRaw: false }
   ];
 
   return (
     <div className="w-full bg-white rounded-[2rem] shadow-[0_15px_50px_rgb(0,0,0,0.06)] border border-slate-200/80 overflow-hidden relative min-h-[600px]">
-      
       <div className="px-6 md:px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
         
         <div className="flex p-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
@@ -234,12 +245,12 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                     <td className="py-4 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-600 font-black text-xs border border-slate-200/60 shadow-sm">Zone {row.zone.replace('Zone ', '')}</span></td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-800 text-[15px]">{stats.num}</td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-500 text-[15px]">{stats.denum}</td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 border-b border-slate-100">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <span className={cn("px-4 py-1 rounded-full text-xs font-black border flex items-center gap-2 shadow-sm", styles.badge, styles.text)}>
-                          <div className={cn("w-2 h-2 rounded-full", styles.dot)}></div>{formatPercent(stats.resultat)}
+                        <span className="px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 bg-slate-100 border-slate-200 text-slate-700">
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>{formatPercent(stats.resultat)}
                         </span>
-                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner"><div className={cn("h-full rounded-full transition-all duration-1000", styles.bar)} style={{ width: `${percentValue}%` }}></div></div>
+                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1"><div className="h-full rounded-full transition-all duration-1000 bg-slate-400" style={{ width: `${stats.resultat * 100}%` }}></div></div>
                       </div>
                     </td>
                   </tr>
@@ -356,7 +367,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/40"><span className="font-black text-slate-400 text-xs">3%</span></td>
 
                     <td className="py-3 px-6 text-center bg-purple-50/10 group-hover:bg-purple-50/30 transition-colors">
-                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-xl font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : bonus < 0 ? "bg-rose-100 text-rose-800 border-rose-200" : "bg-slate-100 text-slate-600 border-slate-200")}>
+                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-xl font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : bonus < 0 ? "bg-red-100 text-red-800 border-red-200" : "bg-slate-100 text-slate-600 border-slate-200")}>
                         {bonus > 0 ? "+" : ""}{formatPercent(bonus)}
                       </div>
                     </td>
@@ -392,8 +403,8 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:border-rose-400 transition-all hover:border-slate-300">
-                        <input type="number" step="0.01" value={targets[row.id]?.bMin || "0"} onChange={(e) => handleTargetChange(row.id, 'bMin', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-rose-600 text-[13px]" /><span className="text-rose-400 font-bold text-[10px] ml-0.5">%</span>
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:border-red-400 transition-all hover:border-slate-300">
+                        <input type="number" step="0.01" value={targets[row.id]?.bMin || "0"} onChange={(e) => handleTargetChange(row.id, 'bMin', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-red-600 text-[13px]" /><span className="text-red-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100">
@@ -403,7 +414,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                     </td>
                     
                     <td className="py-3 px-6 text-center bg-purple-50/10 group-hover:bg-purple-50/30 transition-colors">
-                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-xl font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : bonus < 0 ? "bg-rose-100 text-rose-800 border-rose-200" : "bg-slate-100 text-slate-600 border-slate-200")}>
+                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-xl font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : bonus < 0 ? "bg-red-100 text-red-800 border-red-200" : "bg-slate-100 text-slate-600 border-slate-200")}>
                         {bonus > 0 ? "+" : ""}{formatPercent(bonus)}
                       </div>
                     </td>
@@ -416,7 +427,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                   Total Bonus {category}
                 </td>
                 <td className="py-6 px-6 text-center">
-                  <div className={cn("inline-flex items-center justify-center px-6 py-3 rounded-xl font-black text-[18px] shadow-lg border-2", totalBonus >= 0 ? "bg-emerald-500 text-white border-emerald-400" : "bg-rose-500 text-white border-rose-400")}>
+                  <div className={cn("inline-flex items-center justify-center px-6 py-3 rounded-xl font-black text-[18px] shadow-lg border-2", totalBonus >= 0 ? "bg-emerald-500 text-white border-emerald-400" : "bg-red-500 text-white border-red-400")}>
                     {totalBonus > 0 ? "+" : ""}{(totalBonus * 100).toFixed(2)}%
                   </div>
                 </td>
