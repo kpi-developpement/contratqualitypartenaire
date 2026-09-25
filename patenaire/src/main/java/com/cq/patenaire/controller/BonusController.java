@@ -30,15 +30,22 @@ public class BonusController {
             @PathVariable String period,
             @PathVariable String partenaire,
             @RequestBody BonusConfigRequest configRequest) {
-
-        if (period == null || period.trim().isEmpty() || partenaire == null || configRequest == null) {
-            Map<String, String> err = new HashMap<>();
-            err.put("message", "Paramètres invalides.");
-            return ResponseEntity.badRequest().body(err);
-        }
-
         try {
             Map<String, BonusResultItem> result = bonusCalculationService.calculateBonus(period + "_" + partenaire, configRequest);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("message", "Erreur : " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
+        }
+    }
+
+    @PostMapping("/calculate-all/{period}")
+    public ResponseEntity<?> calculateAllBonus(
+            @PathVariable String period,
+            @RequestBody BonusConfigRequest configRequest) {
+        try {
+            Map<String, Map<String, BonusResultItem>> result = bonusCalculationService.calculateBonusForAll(period, configRequest);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             Map<String, String> err = new HashMap<>();

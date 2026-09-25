@@ -1,28 +1,26 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { IndicatorResult, ReportResponse } from "@/types";
-import { 
-  Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, 
-  Star, Frown, MessageSquareWarning, Network, Crop, Zap, 
-  PieChart, Calculator, Database, TableProperties,
-  Wifi, PhoneCall, HardHat, ChevronsUp, ShieldCheck, FileCheck, CheckCircle2, ClipboardCheck, Timer, Loader2
-} from "lucide-react";
+import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop, Zap, PieChart, Calculator, Database, TableProperties, Wifi, PhoneCall, HardHat, ChevronsUp, ShieldCheck, FileCheck, CheckCircle2, ClipboardCheck, Timer, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateBonus } from "@/services/api";
 
 interface IndicatorsTableProps {
   period: string;
   partner: string;
-  category: 'RACC' | 'SAV';
+  category: 'RACC' | 'SAV'; // Initial category
   reportData: ReportResponse;
+  targets: Record<string, any>;
+  setTargets: React.Dispatch<React.SetStateAction<Record<string, any>>>;
 }
 
-export default function IndicatorsTable({ period, partner, category, reportData }: IndicatorsTableProps) {
+export default function IndicatorsTable({ period, partner, category: initialCategory, reportData, targets, setTargets }: IndicatorsTableProps) {
   
   const [viewMode, setViewMode] = useState<'data' | 'bonus'>('data');
   const [filterMode, setFilterMode] = useState<'ALL' | 'R1' | 'R2' | 'AUTRES'>('ALL');
+  const [category, setCategory] = useState<'RACC' | 'SAV'>(initialCategory);
 
   const rang1 = reportData?.perf_rang1 || reportData?.perf_rang_1 || reportData?.perfRang1;
   const rang2 = reportData?.perf_rang2 || reportData?.perf_rang_2 || reportData?.perfRang2;
@@ -41,30 +39,6 @@ export default function IndicatorsTable({ period, partner, category, reportData 
   const savPerf = reportData?.sav_perf || reportData?.savPerf;
   const audit = reportData?.audit;
   const ree = reportData?.ree;
-
-  const [targets, setTargets] = useState<Record<string, { min: string; max: string; bMin?: string; bMax?: string }>>({
-    // RACC
-    "PLP-A": { min: "94", max: "99" }, "PLP-B": { min: "92", max: "98" }, "PLP-C": { min: "91", max: "98" },
-    "Hotline-A": { min: "86", max: "93" }, "Hotline-B": { min: "79", max: "90" }, "Hotline-C": { min: "78", max: "85" },
-    "Construction-A": { min: "79", max: "87" }, "Construction-B": { min: "76", max: "86" }, "Construction-C": { min: "70", max: "80" },
-    "RANG2-A": { min: "70", max: "74" }, "RANG2-B": { min: "66", max: "77" }, "RANG2-C": { min: "60", max: "65" },
-    "SATCLI_OK": { min: "83", max: "93", bMin: "0", bMax: "4" },
-    "SATCLI_NOK": { min: "35", max: "55", bMin: "0", bMax: "1" },
-    "PLAINTE": { min: "10", max: "6", bMin: "0", bMax: "2" },
-    "GEM_NOK": { min: "80", max: "89", bMin: "-1", bMax: "1" },
-    "TNH": { min: "1.5", max: "0.5", bMin: "-2", bMax: "1" },
-    "CADRAGE": { min: "2", max: "1", bMin: "-2", bMax: "1" },
-    "INCOHERENCE_PTO": { min: "7", max: "9", bMin: "0", bMax: "2" },
-
-    // SAV
-    "SAV_PERF": { min: "81", max: "88", bMin: "-2", bMax: "2" },
-    "SAV_SECURISATION": { min: "3", max: "0", bMin: "-2", bMax: "2" },
-    "AUDIT": { min: "2", max: "0", bMin: "-1", bMax: "1" },
-    "SAV_SATCLI": { min: "10", max: "0", bMin: "-2", bMax: "2" },
-    "SAV_CCR": { min: "2", max: "1", bMin: "-3", bMax: "3" },
-    "REE": { min: "7", max: "2", bMin: "-2", bMax: "2" },
-    "SAV_TNH": { min: "5", max: "2", bMin: "-2", bMax: "1" },
-  });
 
   const [bonusResults, setBonusResults] = useState<Record<string, any>>({});
   const [isCalculating, setIsCalculating] = useState(false);
@@ -173,43 +147,49 @@ export default function IndicatorsTable({ period, partner, category, reportData 
 
   return (
     <div className="w-full bg-white rounded-[1.5rem] shadow-[0_10px_40px_rgb(0,0,0,0.06)] border border-slate-200/80 overflow-hidden relative min-h-[600px]">
-      <div className="px-6 md:px-8 py-5 border-b border-slate-100 bg-white flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
-        <div className="flex items-center gap-4">
-          <div className={cn("p-3.5 rounded-2xl shadow-sm border transition-colors", viewMode === 'data' ? "bg-slate-900 border-slate-800 text-white" : "bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-100 text-purple-600")}>
-            {viewMode === 'data' ? <Database size={24} strokeWidth={2} /> : <Calculator size={24} strokeWidth={2} />}
-          </div>
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Tableau de Bord Unifié - {category}</h2>
-            <p className="text-xs text-slate-500 font-semibold mt-1 flex items-center gap-1.5">
-              <span className={cn("w-2 h-2 rounded-full", viewMode === 'data' ? "bg-blue-500" : "bg-purple-500")}></span>
-              {viewMode === 'data' ? `Résultats Bruts - ${partner}` : `Simulation Bonus - Période ${period}`}
-            </p>
-          </div>
+      
+      <div className="px-6 md:px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
+        
+        {/* Toggle RACC / SAV interne au composant (pour la vue Detail) */}
+        <div className="flex p-1 bg-white rounded-full border border-slate-200 shadow-sm">
+          <button onClick={() => setCategory('RACC')} className={cn("relative px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300 z-10", category === 'RACC' ? "text-white" : "text-slate-500 hover:text-slate-800")}>
+            {category === 'RACC' && <motion.div layoutId="tabIn" className="absolute inset-0 bg-blue-600 rounded-full shadow-md -z-10" transition={{ type: "spring", stiffness: 300, damping: 30 }} />} RACC
+          </button>
+          <button onClick={() => setCategory('SAV')} className={cn("relative px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300 z-10", category === 'SAV' ? "text-white" : "text-slate-500 hover:text-slate-800")}>
+            {category === 'SAV' && <motion.div layoutId="tabIn" className="absolute inset-0 bg-purple-600 rounded-full shadow-md -z-10" transition={{ type: "spring", stiffness: 300, damping: 30 }} />} SAV
+          </button>
         </div>
 
         {category === 'RACC' && (
-          <div className="flex p-1 bg-slate-50 rounded-xl border border-slate-200/60 shadow-inner">
+          <div className="flex p-1 bg-white rounded-xl border border-slate-200/60 shadow-sm">
             {['ALL', 'R1', 'R2', 'AUTRES'].map((f) => (
-              <button key={f} onClick={() => setFilterMode(f as any)} className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300", filterMode === f ? "bg-white text-blue-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700")}>
+              <button key={f} onClick={() => setFilterMode(f as any)} className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300", filterMode === f ? "bg-slate-100 text-blue-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700")}>
                 {f === 'ALL' ? 'Tous' : f === 'R1' ? 'Rang 1' : f === 'R2' ? 'Rang 2' : 'Autres KPI'}
               </button>
             ))}
           </div>
         )}
 
-        <div className="flex p-1.5 bg-slate-100/80 rounded-xl border border-slate-200/60 shadow-inner">
-          <button onClick={() => setViewMode('data')} className={cn("relative px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 z-10 flex items-center gap-2", viewMode === 'data' ? "text-slate-800" : "text-slate-500 hover:text-slate-700")}>
-            {viewMode === 'data' && <motion.div layoutId="activeTab" className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-slate-200/50 -z-10" />}
-            <TableProperties size={16} /> Données Brutes
+        <div className="flex p-1 bg-white rounded-xl border border-slate-200/60 shadow-sm">
+          <button onClick={() => setViewMode('data')} className={cn("relative px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 z-10 flex items-center gap-2", viewMode === 'data' ? "text-slate-800 bg-slate-100" : "text-slate-500 hover:text-slate-700")}>
+            <TableProperties size={16} /> Données
           </button>
-          <button onClick={() => setViewMode('bonus')} className={cn("relative px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 z-10 flex items-center gap-2", viewMode === 'bonus' ? "text-purple-700" : "text-slate-500 hover:text-slate-700")}>
-            {viewMode === 'bonus' && <motion.div layoutId="activeTab" className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-slate-200/50 -z-10" />}
-            <Activity size={16} /> Simulation Bonus
+          <button onClick={() => setViewMode('bonus')} className={cn("relative px-6 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 z-10 flex items-center gap-2", viewMode === 'bonus' ? "text-purple-700 bg-purple-50" : "text-slate-500 hover:text-slate-700")}>
+            <Activity size={16} /> Bonus
           </button>
         </div>
       </div>
+
+      <div className="px-6 md:px-8 py-4 border-b border-slate-100 bg-white">
+        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+          {partner === 'GLOBAL' ? '🌍 Vue Globale' : `🏢 Partenaire : ${partner}`}
+          <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold uppercase tracking-wider border border-slate-200">{category}</span>
+        </h2>
+      </div>
       
       <div className="overflow-x-auto relative">
+
+        {/* ======================= MODE DATA ======================= */}
         <div className={cn("transition-opacity duration-300", viewMode === 'data' ? "opacity-100 block" : "opacity-0 hidden")}>
           <table className="w-full text-sm text-left border-collapse min-w-[1000px]">
             <thead>
@@ -255,19 +235,17 @@ export default function IndicatorsTable({ period, partner, category, reportData 
                     <td className="py-4 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-600 font-bold text-xs border border-slate-200/60 shadow-sm">Zone {row.zone.replace('Zone ', '')}</span></td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-800 text-[15px]">{stats.num}</td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-500 text-[15px]">{stats.denum}</td>
-                    <td className="py-4 px-6 border-b border-slate-100">
+                    <td className="py-4 px-6">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <span className="px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 bg-slate-100 border-slate-200 text-slate-700">
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>{formatPercent(stats.resultat)}
-                        </span>
-                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1"><div className="h-full rounded-full transition-all duration-1000 bg-slate-400" style={{ width: `${stats.resultat * 100}%` }}></div></div>
+                        <span className={cn("px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2", styles.badge, styles.text)}><div className={cn("w-1.5 h-1.5 rounded-full", styles.dot)}></div>{formatPercent(stats.resultat)}</span>
+                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden"><div className={cn("h-full rounded-full transition-all duration-1000", styles.bar)} style={{ width: `${percentValue}%` }}></div></div>
                       </div>
                     </td>
                   </tr>
                 );
               })}
 
-              {(category === 'RACC' ? (filterMode === 'ALL' || filterMode === 'AUTRES') ? rowsDefRaccAutres : [] : rowsDefSav).map((row) => {
+              {(category === 'RACC' ? ((filterMode === 'ALL' || filterMode === 'AUTRES') ? rowsDefRaccAutres : []) : rowsDefSav).map((row) => {
                 const stats = row.stat;
                 if (!stats || (stats.num === 0 && stats.denum === 0)) return null;
 
@@ -311,6 +289,7 @@ export default function IndicatorsTable({ period, partner, category, reportData 
           </table>
         </div>
 
+        {/* ======================= MODE BONUS ======================= */}
         <div className={cn("transition-opacity duration-300", viewMode === 'bonus' ? "opacity-100 block" : "opacity-0 hidden")}>
           <table className="w-full text-sm text-left border-collapse min-w-[1100px]">
             <thead>
@@ -365,12 +344,12 @@ export default function IndicatorsTable({ period, partner, category, reportData 
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/10"><span className="font-bold text-blue-600 text-xs">{formatPercent(pdm)}</span></td>
                     
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].min} onChange={(e) => handleTargetChange(row.id, 'min', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
-                      <div className="inline-flex items-center justify-center bg-slate-50 border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id].max} onChange={(e) => handleTargetChange(row.id, 'max', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
