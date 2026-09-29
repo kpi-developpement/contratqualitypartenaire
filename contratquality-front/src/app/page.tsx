@@ -6,6 +6,8 @@ import FileUpload from "@/components/FileUpload";
 import IndicatorsTable from "@/components/IndicatorsTable";
 import PartnerOverview from "@/components/PartnerOverview";
 import InteractiveBackground from "@/components/InteractiveBackground";
+import FadeIn from "@/components/animations/FadeIn";
+import SlideUp from "@/components/animations/SlideUp";
 import { ReportResponse } from "@/types";
 import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown, Network, Crop, Zap, Wrench, ClipboardCheck, Timer, Trash2, Loader2, ArrowLeft, DatabaseZap, ChevronDown, Check, X, Globe2 } from "lucide-react";
 import { fetchReport, deleteReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile, uploadPtoFile, uploadCadrageFile, uploadGemNokFile, uploadSavFile, uploadAuditFile, uploadReeFile, calculateAllBonuses } from "@/services/api";
@@ -219,12 +221,14 @@ export default function Home() {
           )}
         </AnimatePresence>
 
+        {/* OVERVIEW COMPONENT */}
         {hasData && viewState === 'OVERVIEW' && (
           <SlideUp delay={0.1}>
             <PartnerOverview period={period} overviewBonuses={overviewBonuses} onPartnerSelect={handlePartnerClick} />
           </SlideUp>
         )}
 
+        {/* DETAILS TABLEAU */}
         {hasData && viewState === 'DETAIL' && currentReport && (
           <SlideUp delay={0.1}>
             <button onClick={() => setViewState('OVERVIEW')} className="mb-6 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-slate-200 shadow-sm text-slate-600 font-bold hover:bg-slate-50 hover:text-slate-900 transition-all hover:-translate-x-1 group">
