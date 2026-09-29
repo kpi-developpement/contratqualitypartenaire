@@ -55,81 +55,89 @@ public class BonusCalculationService {
             double resultat = stat.getResultat();
             double pdm = 0.0;
 
+            boolean isR1R2 = indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline") || indicatorId.startsWith("RANG2");
+
             if (indicatorId.startsWith("RANG2")) {
                 if (totalDenumR2 > 0) pdm = stat.getDenum() / totalDenumR2;
-            } else if (indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline")) {
+            } else if (isR1R2) {
                 if (totalDenumR1 > 0) pdm = stat.getDenum() / totalDenumR1;
             }
 
-            // Pour REE et AUDIT, on ne divise pas par 100 car ce sont des valeurs brutes (jours/heures)
+            // Valeurs Brutes (REE, AUDIT) vs Pourcentages
             double divisor = (indicatorId.equals("REE") || indicatorId.equals("AUDIT")) ? 1.0 : 100.0;
-            double tMin = target.getPointMin() / divisor;
-            double tMax = target.getPointMax() / divisor;
+            double tMin = target.getPointMin() / divisor; // G
+            double tMax = target.getPointMax() / divisor; // H
 
             double bMin = target.getBonusMin() != null ? target.getBonusMin() / 100.0 : config.getBonusMin() / 100.0;
             double bMax = target.getBonusMax() != null ? target.getBonusMax() / 100.0 : config.getBonusMax() / 100.0;
 
             double bonus = 0.0;
-            double ratio = 0.0;
-
-            // Formule de base d'interpolation: (E - G) / (H - G)
-            if (tMax != tMin) {
-                ratio = (resultat - tMin) / (tMax - tMin);
-            }
 
             // ==========================================
-            // L'ALGORITHME EXACT DE TON EXCEL (Moteur Mathématique)
+            // LES RATIOS EXACTS (Kima gelti)
+            // ==========================================
+            // =(E-G)/(H-G)
+            double ratioNorm = (tMax != tMin) ? (resultat - tMin) / (tMax - tMin) : 0.0;
+            // =(G-E)/(G-H)
+            double ratioInv  = (tMax != tMin) ? (tMin - resultat) / (tMin - tMax) : 0.0;
+
+            // ==========================================
+            // MOTEUR DE CALCUL (Application du Carré)
             // ==========================================
 
-            // 1. RANG 1 & RANG 2 (Utilise le PDM et le Ratio au Carré comme Facteur G)
-            if (indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline") || indicatorId.startsWith("RANG2")) {
+            // 1. RANG 1 & RANG 2 (Normale, AU CARRÉ, avec PDM)
+            if (isR1R2) {
                 if (resultat <= tMin) bonus = bMin * pdm;
                 else if (resultat >= tMax) bonus = bMax * pdm;
-                else bonus = ratio * bMax * pdm * ratio; // Le fameux G29, G30... est en fait (E-G)/(H-G) * lui-même !
+                else bonus = ratioNorm * ratioNorm * bMax * pdm;
             }
 
-            // 2. SATCLI RACC (OK & NOK) et SAV Performance (Linéaire standard)
-            else if (indicatorId.equals("SATCLI_OK") || indicatorId.equals("SATCLI_NOK") || indicatorId.equals("SAV_PERF")) {
+            // 2. SATCLI (OK & NOK) (Normale, AU CARRÉ) -> MIS À JOUR ICI !
+            else if (indicatorId.equals("SATCLI_OK") || indicatorId.equals("SATCLI_NOK")) {
                 if (resultat <= tMin) bonus = bMin;
                 else if (resultat >= tMax) bonus = bMax;
-                else bonus = ratio * bMax;
+                else bonus = ratioNorm * ratioNorm * bMax; // Ratio² * BonusMax
             }
 
-            // 3. GEM NOK (Linéaire au carré selon la règle)
+            // 3. TAUX DE PLAINTE (Inversée, AU CARRÉ) -> MIS À JOUR ICI !
+            else if (indicatorId.equals("PLAINTE")) {
+                if (resultat >= tMin) bonus = bMin;      // Pire résultat -> Bonus Min
+                else if (resultat <= tMax) bonus = bMax; // Meilleur résultat -> Bonus Max
+                else bonus = ratioInv * ratioInv * bMax; // Ratio² * BonusMax
+            }
+
+            // 4. GEM NOK (Normale, AU CARRÉ)
             else if (indicatorId.equals("GEM_NOK")) {
                 if (resultat <= tMin) bonus = bMin;
                 else if (resultat >= tMax) bonus = bMax;
-                else bonus = ratio * bMax * ratio; // Facteur G44 = Ratio
+                else bonus = ratioNorm * ratioNorm * bMax;
             }
 
-            // 4. INCOHERENCE PTO (Règle spécifique inversée - plus c'est grand, pire c'est)
-            else if (indicatorId.equals("INCOHERENCE_PTO")) {
-                if (resultat >= tMax) bonus = bMin;
-                else if (resultat <= tMin) bonus = bMax;
-                else bonus = (1 - ratio) * bMax; // Logique d'anomalie
-            }
-
-            // 5. TNH et CADRAGE RACC (Logique Inversée au Carré)
+            // 5. TNH & CADRAGE (Inversée, AU CARRÉ)
             else if (indicatorId.equals("TNH") || indicatorId.equals("CADRAGE")) {
-                if (resultat >= tMin) bonus = bMin; // Exemple: si 0.71% >= 1.50% (Faux, c'est inversé)
-                else if (resultat <= tMax) bonus = bMax;
-                else bonus = ratio * bMax * ratio; // Facteur G45, G46 = Ratio
-            }
-
-            // 6. TAUX DE PLAINTE (Logique Inversée Linéaire)
-            else if (indicatorId.equals("PLAINTE")) {
                 if (resultat >= tMin) bonus = bMin;
                 else if (resultat <= tMax) bonus = bMax;
-                else bonus = ratio * bMax;
+                else bonus = ratioInv * ratioInv * bMax;
             }
 
-            // 7. TOUS LES INDICATEURS SAV RESTANTS (Logique Inversée Linéaire)
-            // (Sécurisation, Audit, Satcli SAV, CCR, REE, TNH SAV)
+            // 6. INCOHERENCE PTO (Inversée, LINÉAIRE) -> Reste linéaire comme demandé
+            else if (indicatorId.equals("INCOHERENCE_PTO")) {
+                if (resultat >= tMin) bonus = bMin;
+                else if (resultat <= tMax) bonus = bMax;
+                else bonus = ratioInv * bMax;
+            }
+
+            // 7. TOUS LES SAV RESTANTS (Linéaire standard)
             else if (indicatorId.startsWith("SAV_") || indicatorId.equals("AUDIT") || indicatorId.equals("REE")) {
-                // =SI(D>=F;H;SI(D<=G;I;(D-F)/(G-F)*I)) => Result >= Min -> bMin. Result <= Max -> bMax.
-                if (resultat >= tMin) bonus = bMin;
-                else if (resultat <= tMax) bonus = bMax;
-                else bonus = ratio * bMax;
+                if (tMin < tMax) {
+                    if (resultat <= tMin) bonus = bMin;
+                    else if (resultat >= tMax) bonus = bMax;
+                    else bonus = ratioNorm * bMax;
+                } else {
+                    if (resultat >= tMin) bonus = bMin;
+                    else if (resultat <= tMax) bonus = bMax;
+                    else bonus = ratioInv * bMax;
+                }
             }
 
             results.put(indicatorId, new BonusResultItem(indicatorId, resultat, pdm, bonus));

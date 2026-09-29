@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { IndicatorResult, ReportResponse } from "@/types";
-// FIX: Zedt Building2 hna lfo9 👇
 import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop, Zap, PieChart, Calculator, Database, TableProperties, Wifi, PhoneCall, HardHat, ChevronsUp, ShieldCheck, FileCheck, CheckCircle2, ClipboardCheck, Timer, Loader2, Globe2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateBonus } from "@/services/api";
@@ -347,12 +346,12 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white/50 backdrop-blur-sm"><span className="font-black text-slate-800 text-[14px]">{formatPercent(resultat)}</span></td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/30"><span className="font-black text-blue-600 text-xs">{formatPercent(pdm)}</span></td>
                     
-                    <td className="py-3 px-6 text-center border-r border-slate-100">
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
                       <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id]?.min || "0"} onChange={(e) => handleTargetChange(row.id, 'min', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
-                    <td className="py-3 px-6 text-center border-r border-slate-100">
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
                       <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id]?.max || "0"} onChange={(e) => handleTargetChange(row.id, 'max', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>

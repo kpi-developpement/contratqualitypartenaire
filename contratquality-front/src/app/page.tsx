@@ -13,17 +13,31 @@ import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown, Network, Crop, Za
 import { fetchReport, deleteReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile, uploadPtoFile, uploadCadrageFile, uploadGemNokFile, uploadSavFile, uploadAuditFile, uploadReeFile, calculateAllBonuses } from "@/services/api";
 import { cn } from "@/lib/utils";
 
+// M-ryglin exact kima f Screenshot dyal l'Excel !
 export const DEFAULT_TARGETS = {
+  // RACC - RANG
   "PLP-A": { min: "94", max: "99" }, "PLP-B": { min: "92", max: "98" }, "PLP-C": { min: "91", max: "98" },
   "Hotline-A": { min: "86", max: "93" }, "Hotline-B": { min: "79", max: "90" }, "Hotline-C": { min: "78", max: "85" },
   "Construction-A": { min: "79", max: "87" }, "Construction-B": { min: "76", max: "86" }, "Construction-C": { min: "70", max: "80" },
   "RANG2-A": { min: "70", max: "74" }, "RANG2-B": { min: "66", max: "77" }, "RANG2-C": { min: "60", max: "65" },
-  "SATCLI_OK": { min: "83", max: "93", bMin: "0", bMax: "4" }, "SATCLI_NOK": { min: "35", max: "55", bMin: "0", bMax: "1" },
-  "PLAINTE": { min: "10", max: "6", bMin: "0", bMax: "2" }, "GEM_NOK": { min: "80", max: "89", bMin: "-1", bMax: "1" },
-  "TNH": { min: "1.5", max: "0.5", bMin: "-2", bMax: "1" }, "CADRAGE": { min: "2", max: "1", bMin: "-2", bMax: "1" }, "INCOHERENCE_PTO": { min: "7", max: "9", bMin: "0", bMax: "2" },
-  "SAV_PERF": { min: "81", max: "88", bMin: "-2", bMax: "2" }, "SAV_SECURISATION": { min: "3", max: "0", bMin: "-2", bMax: "2" },
-  "AUDIT": { min: "2", max: "0", bMin: "-1", bMax: "1" }, "SAV_SATCLI": { min: "10", max: "0", bMin: "-2", bMax: "2" },
-  "SAV_CCR": { min: "2", max: "1", bMin: "-3", bMax: "3" }, "REE": { min: "7", max: "2", bMin: "-2", bMax: "2" }, "SAV_TNH": { min: "5", max: "2", bMin: "-2", bMax: "1" },
+  
+  // RACC - AUTRES (Mis à jour selon l'image 2)
+  "SATCLI_OK": { min: "88", max: "95", bMin: "-2", bMax: "3" },
+  "SATCLI_NOK": { min: "39", max: "59", bMin: "-2", bMax: "2" },
+  "PLAINTE": { min: "2", max: "0.5", bMin: "-2", bMax: "2" },
+  "GEM_NOK": { min: "80", max: "89", bMin: "-1", bMax: "1" },
+  "TNH": { min: "1.5", max: "0.5", bMin: "-2", bMax: "1" },
+  "CADRAGE": { min: "2", max: "1", bMin: "-2", bMax: "1" },
+  "INCOHERENCE_PTO": { min: "0.5", max: "0", bMin: "-2", bMax: "1" },
+  
+  // SAV
+  "SAV_PERF": { min: "81", max: "88", bMin: "-2", bMax: "2" }, 
+  "SAV_SECURISATION": { min: "3", max: "0", bMin: "-2", bMax: "2" },
+  "AUDIT": { min: "2", max: "0", bMin: "-1", bMax: "1" }, 
+  "SAV_SATCLI": { min: "10", max: "0", bMin: "-2", bMax: "2" },
+  "SAV_CCR": { min: "2", max: "1", bMin: "-3", bMax: "3" }, 
+  "REE": { min: "7", max: "2", bMin: "-2", bMax: "2" }, 
+  "SAV_TNH": { min: "5", max: "2", bMin: "-2", bMax: "1" },
 };
 
 export default function Home() {
@@ -221,14 +235,12 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        {/* OVERVIEW COMPONENT */}
         {hasData && viewState === 'OVERVIEW' && (
           <SlideUp delay={0.1}>
             <PartnerOverview period={period} overviewBonuses={overviewBonuses} onPartnerSelect={handlePartnerClick} />
           </SlideUp>
         )}
 
-        {/* DETAILS TABLEAU */}
         {hasData && viewState === 'DETAIL' && currentReport && (
           <SlideUp delay={0.1}>
             <button onClick={() => setViewState('OVERVIEW')} className="mb-6 flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-slate-200 shadow-sm text-slate-600 font-bold hover:bg-slate-50 hover:text-slate-900 transition-all hover:-translate-x-1 group">
