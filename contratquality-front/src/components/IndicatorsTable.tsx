@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { IndicatorResult, ReportResponse } from "@/types";
-import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop, Zap, PieChart, Calculator, Database, TableProperties, Wifi, PhoneCall, HardHat, ChevronsUp, ShieldCheck, FileCheck, CheckCircle2, ClipboardCheck, Timer, Loader2, Globe2 } from "lucide-react";
+// FIX: Zedt Building2 hna lfo9 👇
+import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop, Zap, PieChart, Calculator, Database, TableProperties, Wifi, PhoneCall, HardHat, ChevronsUp, ShieldCheck, FileCheck, CheckCircle2, ClipboardCheck, Timer, Loader2, Globe2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateBonus } from "@/services/api";
 
@@ -25,7 +26,6 @@ export default function IndicatorsTable({ period, partner, category: initialCate
   const rang1 = reportData?.perf_rang1 || reportData?.perf_rang_1 || reportData?.perfRang1;
   const rang2 = reportData?.perf_rang2 || reportData?.perf_rang_2 || reportData?.perfRang2;
   
-  // ANTI CRASH BLINDAGE
   const getSafeStat = (stat: any): IndicatorResult => {
     return { num: Number(stat?.num) || 0, denum: Number(stat?.denum) || 0, resultat: Number(stat?.resultat) || 0.0 };
   };
@@ -139,22 +139,22 @@ export default function IndicatorsTable({ period, partner, category: initialCate
 
   const rowsDefRaccAutres = [
     { id: "SATCLI_OK", cat: "Satcli (sur RDV OK)", stat: satcliOk, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", isRaw: false },
-    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: satcliNok, icon: <Frown size={20} className="text-orange-400" />, colorClass: "bg-orange-500", isRaw: false },
-    { id: "PLAINTE", cat: "Taux de plainte", stat: tauxPlainte, icon: <MessageSquareWarning size={20} className="text-rose-400" />, colorClass: "bg-rose-500", isRaw: false },
+    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: satcliNok, icon: <Frown size={20} className="text-orange-500" />, colorClass: "bg-orange-500", isRaw: false },
+    { id: "PLAINTE", cat: "Taux de plainte", stat: tauxPlainte, icon: <MessageSquareWarning size={20} className="text-rose-500" />, colorClass: "bg-rose-500", isRaw: false },
     { id: "GEM_NOK", cat: "Transf. des GEM en TVC", stat: gemNok, icon: <Zap size={20} className="text-cyan-400" />, colorClass: "bg-cyan-500", isRaw: false },
-    { id: "TNH", cat: "Taux de RDV non honoré", stat: tnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false },
-    { id: "CADRAGE", cat: "Conformité Cadrage", stat: cadrage, icon: <Crop size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: false },
-    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-orange-500" />, colorClass: "bg-orange-500", isRaw: false },
+    { id: "TNH", cat: "Taux de RDV non honoré", stat: tnh, icon: <AlertTriangle size={20} className="text-purple-500" />, colorClass: "bg-purple-500", isRaw: false },
+    { id: "CADRAGE", cat: "Conformité Cadrage", stat: cadrage, icon: <Crop size={20} className="text-indigo-500" />, colorClass: "bg-indigo-500", isRaw: false },
+    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-orange-600" />, colorClass: "bg-orange-600", isRaw: false },
   ];
 
   const rowsDefSav = [
-    { id: "SAV_PERF", cat: "Taux de CR OK", stat: savPerf, icon: <CheckCircle2 size={20} className="text-emerald-400" />, colorClass: "bg-emerald-500", isRaw: false },
-    { id: "SAV_SECURISATION", cat: "Sécurisation de RDV", stat: savSecurisation, icon: <ShieldCheck size={20} className="text-blue-400" />, colorClass: "bg-blue-500", isRaw: false },
+    { id: "SAV_PERF", cat: "Taux de CR OK", stat: savPerf, icon: <CheckCircle2 size={20} className="text-emerald-500" />, colorClass: "bg-emerald-500", isRaw: false },
+    { id: "SAV_SECURISATION", cat: "Sécurisation de RDV", stat: savSecurisation, icon: <ShieldCheck size={20} className="text-blue-500" />, colorClass: "bg-blue-500", isRaw: false },
     { id: "AUDIT", cat: "Délai de traitement audit", stat: audit, icon: <ClipboardCheck size={20} className="text-amber-500" />, colorClass: "bg-amber-500", isRaw: true },
     { id: "SAV_SATCLI", cat: "Clients très insatisfait", stat: savSatcli, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", isRaw: false },
     { id: "SAV_CCR", cat: "Conformité CR", stat: savCcr, icon: <FileCheck size={20} className="text-amber-400" />, colorClass: "bg-amber-500", isRaw: false },
-    { id: "REE", cat: "Délai traitement remises en état", stat: ree, icon: <Timer size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: true },
-    { id: "SAV_TNH", cat: "Taux de RDV non honoré", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false }
+    { id: "REE", cat: "Délai traitement remises en état", stat: ree, icon: <Timer size={20} className="text-indigo-500" />, colorClass: "bg-indigo-500", isRaw: true },
+    { id: "SAV_TNH", cat: "Taux de RDV non honoré", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-500" />, colorClass: "bg-purple-500", isRaw: false }
   ];
 
   return (
@@ -300,7 +300,6 @@ export default function IndicatorsTable({ period, partner, category: initialCate
           </table>
         </div>
 
-        {/* ======================= MODE BONUS ======================= */}
         <div className={cn("transition-opacity duration-300", viewMode === 'bonus' ? "opacity-100 block" : "opacity-0 hidden")}>
           <table className="w-full text-sm text-left border-collapse min-w-[1100px]">
             <thead>
@@ -386,7 +385,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                     </td>
                     <td className="py-3 px-4 text-center border-r border-slate-100"><span className="font-black text-slate-400 text-xs">-</span></td>
                     <td className="py-3 px-6 text-center border-r border-slate-100 bg-white/50"><span className="font-black text-slate-800 text-[14px]">{formatPercentOrRaw(row.id, resultat)}</span></td>
-                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/30"><span className="font-black text-slate-400 text-xs">-</span></td>
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/10"><span className="font-black text-slate-400 text-xs">-</span></td>
                     
                     <td className="py-3 px-6 text-center border-r border-slate-100">
                       <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:border-purple-400 transition-all hover:border-slate-300">

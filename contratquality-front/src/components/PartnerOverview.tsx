@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+// FIX: Zedt Network w Cpu lfo9 👇
 import { Globe2, Building2, Search, ArrowUpDown, Filter, LayoutGrid, Network, Cpu, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +12,6 @@ interface PartnerOverviewProps {
   onPartnerSelect: (partner: string) => void;
 }
 
-// Composant Interne pour la Carte "Transformer Prime"
 const PartnerCard = ({ partner, sums, onClick }: { partner: string, sums: any, onClick: () => void }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -29,13 +29,10 @@ const PartnerCard = ({ partner, sums, onClick }: { partner: string, sums: any, o
           : "bg-white/80 backdrop-blur-xl border-slate-200/80 text-slate-800 min-h-[200px]"
       )}
     >
-      {/* Effet Glow Interne au Hover */}
       <AnimatePresence>
         {isHovered && (
           <motion.div 
-            initial={{ opacity: 0, scale: 0.5 }} 
-            animate={{ opacity: 1, scale: 1 }} 
-            exit={{ opacity: 0, scale: 0.5 }}
+            initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}
             className="absolute -bottom-10 -right-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl z-0"
           />
         )}
@@ -56,10 +53,8 @@ const PartnerCard = ({ partner, sums, onClick }: { partner: string, sums: any, o
         </motion.div>
       </motion.div>
 
-      {/* Statistiques Dynamiques */}
       <motion.div layout className="mt-auto space-y-3 relative z-10">
         
-        {/* RACC BAR */}
         <motion.div layout className={cn("flex items-center justify-between p-3 rounded-2xl border transition-colors duration-500", isHovered ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-100")}>
           <div className="flex items-center gap-2">
             <Network size={16} className={cn(isHovered ? "text-slate-400" : "text-slate-500")} />
@@ -70,7 +65,6 @@ const PartnerCard = ({ partner, sums, onClick }: { partner: string, sums: any, o
           </div>
         </motion.div>
 
-        {/* SAV BAR */}
         <motion.div layout className={cn("flex items-center justify-between p-3 rounded-2xl border transition-colors duration-500", isHovered ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-100")}>
           <div className="flex items-center gap-2">
             <Cpu size={16} className={cn(isHovered ? "text-slate-400" : "text-slate-500")} />
@@ -83,7 +77,6 @@ const PartnerCard = ({ partner, sums, onClick }: { partner: string, sums: any, o
 
       </motion.div>
       
-      {/* Call to action texte (Visible qu'au hover) */}
       <AnimatePresence>
         {isHovered && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="pt-4 text-center relative z-10">
@@ -121,7 +114,6 @@ export default function PartnerOverview({ period, overviewBonuses, onPartnerSele
   return (
     <div className="space-y-8">
       
-      {/* 1. HERO CARD : PERFORMANCE GLOBALE */}
       {globalData && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -167,20 +159,13 @@ export default function PartnerOverview({ period, overviewBonuses, onPartnerSele
         </motion.div>
       )}
 
-      {/* 2. TOOLBAR LUXE (Recherche & Tri Pro) */}
+      {/* 2. TOOLBAR LUXE */}
       <div className="flex flex-col lg:flex-row items-center justify-between gap-4 p-3 bg-white/90 rounded-2xl border border-slate-200 shadow-sm sticky top-[88px] z-30 backdrop-blur-2xl">
-        
         <div className="relative w-full lg:w-96 group">
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
             <Search size={18} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
           </div>
-          <input
-            type="text"
-            placeholder="Rechercher un partenaire..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200/50 rounded-xl text-sm font-bold text-slate-700 placeholder-slate-400 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-          />
+          <input type="text" placeholder="Rechercher un partenaire..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200/50 rounded-xl text-sm font-bold text-slate-700 placeholder-slate-400 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
         </div>
 
         <div className="flex items-center gap-3 w-full lg:w-auto">
@@ -195,7 +180,6 @@ export default function PartnerOverview({ period, overviewBonuses, onPartnerSele
         </div>
       </div>
 
-      {/* 3. LA GRILLE DES PARTENAIRES (Transformer Prime effect géré par composant interne) */}
       <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
         <AnimatePresence mode="popLayout">
           {partnersList.length > 0 ? (
