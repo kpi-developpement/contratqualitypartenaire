@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { IndicatorResult, ReportResponse } from "@/types";
-import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop, Zap, PieChart, Calculator, Database, TableProperties, Wifi, PhoneCall, HardHat, ChevronsUp, ShieldCheck, FileCheck, CheckCircle2, ClipboardCheck, Timer, Loader2 } from "lucide-react";
+import { Activity, Layers, Hash, Target, TrendingUp, AlertTriangle, Star, Frown, MessageSquareWarning, Network, Crop, Zap, PieChart, Calculator, Database, TableProperties, Wifi, PhoneCall, HardHat, ChevronsUp, ShieldCheck, FileCheck, CheckCircle2, ClipboardCheck, Timer, Loader2, Globe2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateBonus } from "@/services/api";
 
@@ -25,13 +25,9 @@ export default function IndicatorsTable({ period, partner, category: initialCate
   const rang1 = reportData?.perf_rang1 || reportData?.perf_rang_1 || reportData?.perfRang1;
   const rang2 = reportData?.perf_rang2 || reportData?.perf_rang_2 || reportData?.perfRang2;
   
-  // ANTI-CRASH BLINDAGE
+  // ANTI CRASH BLINDAGE
   const getSafeStat = (stat: any): IndicatorResult => {
-    return {
-      num: Number(stat?.num) || 0,
-      denum: Number(stat?.denum) || 0,
-      resultat: Number(stat?.resultat) || 0.0
-    };
+    return { num: Number(stat?.num) || 0, denum: Number(stat?.denum) || 0, resultat: Number(stat?.resultat) || 0.0 };
   };
 
   const formatPercent = (value: any) => {
@@ -123,7 +119,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
   const getScoreStyles = (value: number) => {
     if (value >= 0.8) return { bar: "bg-emerald-400", text: "text-emerald-700", badge: "bg-emerald-50 border-emerald-200", dot: "bg-emerald-500" };
     if (value >= 0.5) return { bar: "bg-amber-400", text: "text-amber-700", badge: "bg-amber-50 border-amber-200", dot: "bg-amber-500" };
-    return { bar: "bg-red-400", text: "text-red-700", badge: "bg-red-50 border-red-200", dot: "bg-red-500" };
+    return { bar: "bg-rose-400", text: "text-rose-700", badge: "bg-rose-50 border-rose-200", dot: "bg-rose-500" };
   };
 
   const rowsDefRaccR1R2 = [
@@ -143,29 +139,29 @@ export default function IndicatorsTable({ period, partner, category: initialCate
 
   const rowsDefRaccAutres = [
     { id: "SATCLI_OK", cat: "Satcli (sur RDV OK)", stat: satcliOk, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", isRaw: false },
-    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: satcliNok, icon: <Frown size={20} className="text-orange-500" />, colorClass: "bg-orange-500", isRaw: false },
-    { id: "PLAINTE", cat: "Taux de plainte", stat: tauxPlainte, icon: <MessageSquareWarning size={20} className="text-red-500" />, colorClass: "bg-red-500", isRaw: false },
+    { id: "SATCLI_NOK", cat: "Satcli (sur RDV NOK)", stat: satcliNok, icon: <Frown size={20} className="text-orange-400" />, colorClass: "bg-orange-500", isRaw: false },
+    { id: "PLAINTE", cat: "Taux de plainte", stat: tauxPlainte, icon: <MessageSquareWarning size={20} className="text-rose-400" />, colorClass: "bg-rose-500", isRaw: false },
     { id: "GEM_NOK", cat: "Transf. des GEM en TVC", stat: gemNok, icon: <Zap size={20} className="text-cyan-400" />, colorClass: "bg-cyan-500", isRaw: false },
-    { id: "TNH", cat: "Taux de RDV non honoré", stat: tnh, icon: <AlertTriangle size={20} className="text-purple-500" />, colorClass: "bg-purple-500", isRaw: false },
-    { id: "CADRAGE", cat: "Conformité Cadrage", stat: cadrage, icon: <Crop size={20} className="text-indigo-500" />, colorClass: "bg-indigo-500", isRaw: false },
-    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-orange-600" />, colorClass: "bg-orange-600", isRaw: false },
+    { id: "TNH", cat: "Taux de RDV non honoré", stat: tnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false },
+    { id: "CADRAGE", cat: "Conformité Cadrage", stat: cadrage, icon: <Crop size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: false },
+    { id: "INCOHERENCE_PTO", cat: "Incohérence PTO", stat: incoherencePto, icon: <Network size={20} className="text-orange-500" />, colorClass: "bg-orange-500", isRaw: false },
   ];
 
   const rowsDefSav = [
-    { id: "SAV_PERF", cat: "Taux de CR OK", stat: savPerf, icon: <CheckCircle2 size={20} className="text-emerald-500" />, colorClass: "bg-emerald-500", isRaw: false },
-    { id: "SAV_SECURISATION", cat: "Sécurisation de RDV", stat: savSecurisation, icon: <ShieldCheck size={20} className="text-blue-500" />, colorClass: "bg-blue-500", isRaw: false },
+    { id: "SAV_PERF", cat: "Taux de CR OK", stat: savPerf, icon: <CheckCircle2 size={20} className="text-emerald-400" />, colorClass: "bg-emerald-500", isRaw: false },
+    { id: "SAV_SECURISATION", cat: "Sécurisation de RDV", stat: savSecurisation, icon: <ShieldCheck size={20} className="text-blue-400" />, colorClass: "bg-blue-500", isRaw: false },
     { id: "AUDIT", cat: "Délai de traitement audit", stat: audit, icon: <ClipboardCheck size={20} className="text-amber-500" />, colorClass: "bg-amber-500", isRaw: true },
     { id: "SAV_SATCLI", cat: "Clients très insatisfait", stat: savSatcli, icon: <Star size={20} className="text-teal-400 fill-teal-400/20" />, colorClass: "bg-teal-500", isRaw: false },
     { id: "SAV_CCR", cat: "Conformité CR", stat: savCcr, icon: <FileCheck size={20} className="text-amber-400" />, colorClass: "bg-amber-500", isRaw: false },
-    { id: "REE", cat: "Délai traitement remises en état", stat: ree, icon: <Timer size={20} className="text-indigo-500" />, colorClass: "bg-indigo-500", isRaw: true },
-    { id: "SAV_TNH", cat: "Taux de RDV non honoré", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-500" />, colorClass: "bg-purple-500", isRaw: false }
+    { id: "REE", cat: "Délai traitement remises en état", stat: ree, icon: <Timer size={20} className="text-indigo-400" />, colorClass: "bg-indigo-500", isRaw: true },
+    { id: "SAV_TNH", cat: "Taux de RDV non honoré", stat: savTnh, icon: <AlertTriangle size={20} className="text-purple-400" />, colorClass: "bg-purple-500", isRaw: false }
   ];
 
   return (
-    <div className="w-full bg-white rounded-[2rem] shadow-[0_15px_50px_rgb(0,0,0,0.06)] border border-slate-200/80 overflow-hidden relative min-h-[600px]">
-      <div className="px-6 md:px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
+    <div className="w-full bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-[0_15px_50px_rgb(0,0,0,0.06)] border border-slate-200/80 overflow-hidden relative min-h-[600px]">
+      <div className="px-6 md:px-8 py-6 border-b border-slate-100 bg-white flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
         
-        <div className="flex p-1.5 bg-white rounded-full border border-slate-200 shadow-sm">
+        <div className="flex p-1.5 bg-slate-50 rounded-full border border-slate-200 shadow-inner">
           <button onClick={() => setCategory('RACC')} className={cn("relative px-8 py-2.5 rounded-full text-sm font-black transition-all duration-300 z-10", category === 'RACC' ? "text-white" : "text-slate-500 hover:text-slate-800")}>
             {category === 'RACC' && <motion.div layoutId="tabIn" className="absolute inset-0 bg-blue-600 rounded-full shadow-md -z-10" transition={{ type: "spring", stiffness: 300, damping: 30 }} />} RACC
           </button>
@@ -175,39 +171,39 @@ export default function IndicatorsTable({ period, partner, category: initialCate
         </div>
 
         {category === 'RACC' && (
-          <div className="flex p-1.5 bg-white rounded-2xl border border-slate-200/60 shadow-sm">
+          <div className="flex p-1.5 bg-slate-50 rounded-2xl border border-slate-200/60 shadow-inner">
             {['ALL', 'R1', 'R2', 'AUTRES'].map((f) => (
-              <button key={f} onClick={() => setFilterMode(f as any)} className={cn("px-5 py-2 rounded-xl text-xs font-black transition-all duration-300", filterMode === f ? "bg-slate-100 text-blue-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700")}>
+              <button key={f} onClick={() => setFilterMode(f as any)} className={cn("px-5 py-2 rounded-xl text-xs font-black transition-all duration-300", filterMode === f ? "bg-white text-blue-700 shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700")}>
                 {f === 'ALL' ? 'Tous' : f === 'R1' ? 'Rang 1' : f === 'R2' ? 'Rang 2' : 'Autres KPI'}
               </button>
             ))}
           </div>
         )}
 
-        <div className="flex p-1.5 bg-white rounded-2xl border border-slate-200/60 shadow-sm">
-          <button onClick={() => setViewMode('data')} className={cn("relative px-6 py-2.5 rounded-xl text-sm font-black transition-all duration-300 z-10 flex items-center gap-2", viewMode === 'data' ? "text-slate-800 bg-slate-100 border border-slate-200/50" : "text-slate-500 hover:text-slate-700")}>
+        <div className="flex p-1.5 bg-slate-50 rounded-2xl border border-slate-200/60 shadow-inner">
+          <button onClick={() => setViewMode('data')} className={cn("relative px-6 py-2.5 rounded-xl text-sm font-black transition-all duration-300 z-10 flex items-center gap-2", viewMode === 'data' ? "text-slate-800 bg-white shadow-sm border border-slate-200/50" : "text-slate-500 hover:text-slate-700")}>
             <TableProperties size={18} /> Données
           </button>
-          <button onClick={() => setViewMode('bonus')} className={cn("relative px-6 py-2.5 rounded-xl text-sm font-black transition-all duration-300 z-10 flex items-center gap-2", viewMode === 'bonus' ? "text-purple-700 bg-purple-50 border border-purple-100/50" : "text-slate-500 hover:text-slate-700")}>
+          <button onClick={() => setViewMode('bonus')} className={cn("relative px-6 py-2.5 rounded-xl text-sm font-black transition-all duration-300 z-10 flex items-center gap-2", viewMode === 'bonus' ? "text-purple-700 bg-white shadow-sm border border-purple-100/50" : "text-slate-500 hover:text-slate-700")}>
             <Activity size={18} /> Bonus
           </button>
         </div>
       </div>
 
-      <div className="px-6 md:px-8 py-5 border-b border-slate-100 bg-white">
+      <div className="px-6 md:px-8 py-5 border-b border-slate-100 bg-white/50 backdrop-blur-sm">
         <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-          {partner === 'GLOBAL' ? '🌍 Vue Globale' : `🏢 Partenaire : ${partner}`}
+          {partner === 'GLOBAL' ? <Globe2 className="text-blue-500" /> : <Building2 className="text-slate-500" />}
+          {partner === 'GLOBAL' ? 'Vue Globale' : `Partenaire : ${partner}`}
           <span className={cn("px-3 py-1 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm", category === 'RACC' ? "bg-blue-600" : "bg-purple-600")}>{category}</span>
         </h2>
       </div>
       
-      <div className="overflow-x-auto relative">
+      <div className="overflow-x-auto relative bg-white/50">
 
-        {/* ======================= MODE DATA ======================= */}
         <div className={cn("transition-opacity duration-300", viewMode === 'data' ? "opacity-100 block" : "opacity-0 hidden")}>
           <table className="w-full text-sm text-left border-collapse min-w-[1000px]">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200/80">
+              <tr className="bg-slate-50/80 border-b border-slate-200/80 backdrop-blur-md">
                 <th className="py-5 px-6 font-black text-slate-400 tracking-widest text-[11px] uppercase w-28 text-center border-r border-slate-100">Niveau</th>
                 <th className="py-5 px-8 font-black text-slate-400 tracking-widest text-[11px] uppercase w-64 border-r border-slate-100">Activité / Catégorie</th>
                 <th className="py-5 px-6 font-black text-slate-400 tracking-widest text-[11px] uppercase text-center w-32 border-r border-slate-100">Zone</th>
@@ -216,7 +212,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                 <th className="py-5 px-6 font-black text-slate-400 tracking-widest text-[11px] uppercase text-center"><div className="flex items-center justify-center gap-1.5"><TrendingUp size={14}/> KPI Final</div></th>
               </tr>
             </thead>
-            <tbody className="bg-white">
+            <tbody className="bg-white/40">
               
               {category === 'RACC' && (filterMode === 'ALL' || filterMode === 'R1' || filterMode === 'R2') && rowsDefRaccR1R2.map((row, index) => {
                 if (filterMode === 'R1' && row.type !== 'R1') return null;
@@ -236,21 +232,21 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                         </div>
                       </td>
                     )}
-                    <td className="py-4 px-8 align-middle border-r border-slate-100 bg-white">
+                    <td className="py-4 px-8 align-middle border-r border-slate-100 bg-white/50 backdrop-blur-sm">
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 shadow-sm">{row.icon}</div>
                         <span className="font-extrabold text-slate-800 text-[13px]">{row.cat}</span>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-600 font-black text-xs border border-slate-200/60 shadow-sm">Zone {row.zone.replace('Zone ', '')}</span></td>
+                    <td className="py-4 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-white text-slate-600 font-black text-xs border border-slate-200/60 shadow-sm">Zone {row.zone.replace('Zone ', '')}</span></td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-800 text-[15px]">{stats.num}</td>
                     <td className="py-4 px-6 text-center border-r border-slate-100 font-black text-slate-500 text-[15px]">{stats.denum}</td>
                     <td className="py-4 px-6 border-b border-slate-100">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <span className="px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 bg-slate-100 border-slate-200 text-slate-700">
+                        <span className="px-4 py-1 rounded-full text-xs font-bold border flex items-center gap-2 bg-white shadow-sm border-slate-200 text-slate-700">
                           <div className="w-1.5 h-1.5 rounded-full bg-slate-500"></div>{formatPercent(stats.resultat)}
                         </span>
-                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1"><div className="h-full rounded-full transition-all duration-1000 bg-slate-400" style={{ width: `${stats.resultat * 100}%` }}></div></div>
+                        <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden shadow-inner"><div className="h-full rounded-full transition-all duration-1000 bg-slate-400" style={{ width: `${percentValue}%` }}></div></div>
                       </div>
                     </td>
                   </tr>
@@ -262,7 +258,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                 const percentValue = stats.resultat * 100;
 
                 return (
-                  <tr key={`other-data-${row.id}`} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100/50 bg-white">
+                  <tr key={`other-data-${row.id}`} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100/50 bg-white/40">
                     <td className="py-4 px-4 align-middle border-r border-slate-100 bg-slate-50/50">
                       <div className="flex flex-col items-center justify-center gap-4 py-6 px-3 rounded-2xl bg-slate-900 shadow-md">
                         {row.icon}
@@ -271,11 +267,11 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                     </td>
                     <td className="py-4 px-8 align-middle border-r border-slate-100">
                       <div className="flex items-center gap-3">
-                        <div className={cn("p-2 rounded-xl border shadow-sm", row.colorClass.replace('bg-', 'bg-opacity-10 border-').replace('500', '200'))}>{row.icon}</div>
+                        <div className={cn("p-2 rounded-xl border shadow-sm bg-white", row.colorClass.replace('bg-', 'border-').replace('500', '200'))}>{row.icon}</div>
                         <span className="font-extrabold text-slate-800 text-[13px]">{row.cat}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-slate-50 text-slate-400 font-black text-xs border border-slate-200/60 shadow-sm">Global</span></td>
+                    <td className="py-3 px-6 text-center border-r border-slate-100"><span className="inline-flex items-center justify-center px-4 py-1.5 rounded-lg bg-white shadow-sm text-slate-400 font-black text-xs border border-slate-200/60">Global</span></td>
                     
                     {row.isRaw ? (
                       <>
@@ -291,7 +287,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                     
                     <td className="py-3 px-6">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <span className={cn("px-4 py-1.5 rounded-full text-xs font-black border flex items-center gap-2 shadow-sm", row.colorClass.replace('bg-', 'bg-opacity-10 border-').replace('500', '200'), row.colorClass.replace('bg-', 'text-').replace('500', '700'))}>
+                        <span className={cn("px-4 py-1.5 rounded-full text-xs font-black border flex items-center gap-2 shadow-sm bg-white", row.colorClass.replace('bg-', 'border-').replace('500', '200'), row.colorClass.replace('bg-', 'text-').replace('500', '600'))}>
                           <div className={cn("w-2 h-2 rounded-full", row.colorClass)}></div>{formatPercentOrRaw(row.id, stats.resultat)}
                         </span>
                         {!row.isRaw && <div className="w-full max-w-[140px] bg-slate-100 rounded-full h-2 overflow-hidden mt-1 shadow-inner"><div className={cn("h-full rounded-full transition-all duration-1000", row.colorClass)} style={{ width: `${percentValue}%` }}></div></div>}
@@ -308,7 +304,7 @@ export default function IndicatorsTable({ period, partner, category: initialCate
         <div className={cn("transition-opacity duration-300", viewMode === 'bonus' ? "opacity-100 block" : "opacity-0 hidden")}>
           <table className="w-full text-sm text-left border-collapse min-w-[1100px]">
             <thead>
-              <tr className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-100">
+              <tr className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-100/80 backdrop-blur-md">
                 <th className="py-5 px-6 font-black text-purple-900 tracking-widest text-[11px] uppercase border-r border-purple-100/50 w-56">Indicateurs</th>
                 <th className="py-5 px-4 font-black text-purple-900 tracking-widest text-[11px] uppercase text-center border-r border-purple-100/50 w-24">Zone</th>
                 <th className="py-5 px-6 font-black text-purple-900 tracking-widest text-[11px] uppercase text-center border-r border-purple-100/50 w-28">Résultat</th>
@@ -317,12 +313,12 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                 <th className="py-5 px-6 font-black text-purple-900 tracking-widest text-[11px] uppercase text-center border-r border-purple-100/50 w-28">Point Max</th>
                 <th className="py-5 px-6 font-black text-purple-900 tracking-widest text-[11px] uppercase text-center border-r border-purple-100/50 w-28">Bonus Min</th>
                 <th className="py-5 px-6 font-black text-purple-900 tracking-widest text-[11px] uppercase text-center border-r border-purple-100/50 w-28">Bonus Max</th>
-                <th className="py-5 px-6 font-black text-purple-900 tracking-widest text-[11px] uppercase text-center bg-purple-500/10">
+                <th className="py-5 px-6 font-black text-purple-900 tracking-widest text-[11px] uppercase text-center bg-purple-500/10 shadow-inner">
                   <div className="flex items-center justify-center gap-2">Bonus Ind. {isCalculating && <Loader2 size={14} className="animate-spin text-purple-600" />}</div>
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white">
+            <tbody className="bg-white/40">
               
               {category === 'RACC' && (filterMode === 'ALL' || filterMode === 'R1' || filterMode === 'R2') && rowsDefRaccR1R2.map((row, index) => {
                 if (filterMode === 'R1' && row.type !== 'R1') return null;
@@ -337,37 +333,37 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                 const bonus = bonusResults[row.id]?.bonusCalcule ?? bonusResults[row.id]?.bonus_calcule ?? 0;
 
                 return (
-                  <tr key={`bonus-${row.id}`} className="hover:bg-slate-50/60 transition-colors border-b border-slate-100/60 group">
+                  <tr key={`bonus-${row.id}`} className="hover:bg-white transition-colors border-b border-slate-100/60 group">
                     {index % 3 === 0 && (
                       <td rowSpan={3} className="py-4 px-6 align-middle border-r border-slate-100 bg-slate-50/30">
                         <span className="font-extrabold text-slate-800 text-[13px]">{row.cat}</span>
                       </td>
                     )}
-                    <td className="py-3 px-4 text-center border-r border-slate-100 bg-white">
+                    <td className="py-3 px-4 text-center border-r border-slate-100 bg-white/50 backdrop-blur-sm">
                       <div className="flex items-center justify-center gap-2">
                         {row.icon}
                         <span className="font-black text-slate-600 text-[11px]">{row.zone.replace('Zone ', '')}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-white"><span className="font-black text-slate-800 text-[14px]">{formatPercent(resultat)}</span></td>
-                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/10"><span className="font-black text-blue-600 text-xs">{formatPercent(pdm)}</span></td>
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-white/50 backdrop-blur-sm"><span className="font-black text-slate-800 text-[14px]">{formatPercent(resultat)}</span></td>
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/30"><span className="font-black text-blue-600 text-xs">{formatPercent(pdm)}</span></td>
                     
-                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
+                    <td className="py-3 px-6 text-center border-r border-slate-100">
                       <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id]?.min || "0"} onChange={(e) => handleTargetChange(row.id, 'min', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
-                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-white">
+                    <td className="py-3 px-6 text-center border-r border-slate-100">
                       <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all hover:border-slate-300">
                         <input type="number" step="0.01" value={targets[row.id]?.max || "0"} onChange={(e) => handleTargetChange(row.id, 'max', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-slate-700 text-[13px]" /><span className="text-slate-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
 
-                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/40"><span className="font-black text-slate-400 text-xs">-2%</span></td>
-                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/40"><span className="font-black text-slate-400 text-xs">3%</span></td>
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/20"><span className="font-black text-slate-400 text-xs">-2%</span></td>
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/20"><span className="font-black text-slate-400 text-xs">3%</span></td>
 
-                    <td className="py-3 px-6 text-center bg-purple-50/10 group-hover:bg-purple-50/30 transition-colors">
-                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-xl font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : bonus < 0 ? "bg-red-100 text-red-800 border-red-200" : "bg-slate-100 text-slate-600 border-slate-200")}>
+                    <td className="py-3 px-6 text-center bg-purple-50/20 group-hover:bg-purple-50/40 transition-colors shadow-inner">
+                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-xl font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : bonus < 0 ? "bg-rose-50 text-rose-600 border-rose-200" : "bg-white text-slate-600 border-slate-200")}>
                         {bonus > 0 ? "+" : ""}{formatPercent(bonus)}
                       </div>
                     </td>
@@ -381,16 +377,16 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                 const bonus = bonusResults[row.id]?.bonusCalcule ?? bonusResults[row.id]?.bonus_calcule ?? 0;
 
                 return (
-                  <tr key={`bonus-other-${row.id}`} className="hover:bg-slate-50/60 transition-colors border-b border-slate-100/60 bg-[#fbfcfd]">
+                  <tr key={`bonus-other-${row.id}`} className="hover:bg-white transition-colors border-b border-slate-100/60 bg-[#fbfcfd]">
                     <td className="py-4 px-6 align-middle border-r border-slate-100">
                       <div className="flex items-center gap-3">
-                        <div className={cn("p-2 rounded-xl border shadow-sm", row.colorClass.replace('bg-', 'bg-opacity-10 border-').replace('500', '200'))}>{row.icon}</div>
+                        <div className={cn("p-1.5 rounded-xl border shadow-sm bg-white", row.colorClass.replace('bg-', 'border-').replace('500', '200'))}>{row.icon}</div>
                         <span className="font-extrabold text-slate-800 text-[13px]">{row.cat}</span>
                       </div>
                     </td>
                     <td className="py-3 px-4 text-center border-r border-slate-100"><span className="font-black text-slate-400 text-xs">-</span></td>
-                    <td className="py-3 px-6 text-center border-r border-slate-100"><span className="font-black text-slate-800 text-[14px]">{formatPercentOrRaw(row.id, resultat)}</span></td>
-                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-blue-50/10"><span className="font-black text-slate-400 text-xs">-</span></td>
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-white/50"><span className="font-black text-slate-800 text-[14px]">{formatPercentOrRaw(row.id, resultat)}</span></td>
+                    <td className="py-3 px-6 text-center border-r border-slate-100 bg-slate-50/30"><span className="font-black text-slate-400 text-xs">-</span></td>
                     
                     <td className="py-3 px-6 text-center border-r border-slate-100">
                       <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:border-purple-400 transition-all hover:border-slate-300">
@@ -403,8 +399,8 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100">
-                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:border-red-400 transition-all hover:border-slate-300">
-                        <input type="number" step="0.01" value={targets[row.id]?.bMin || "0"} onChange={(e) => handleTargetChange(row.id, 'bMin', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-red-600 text-[13px]" /><span className="text-red-400 font-bold text-[10px] ml-0.5">%</span>
+                      <div className="inline-flex items-center justify-center bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1.5 focus-within:ring-2 focus-within:border-rose-400 transition-all hover:border-slate-300">
+                        <input type="number" step="0.01" value={targets[row.id]?.bMin || "0"} onChange={(e) => handleTargetChange(row.id, 'bMin', e.target.value)} className="w-12 bg-transparent text-right outline-none font-bold text-rose-600 text-[13px]" /><span className="text-rose-400 font-bold text-[10px] ml-0.5">%</span>
                       </div>
                     </td>
                     <td className="py-3 px-6 text-center border-r border-slate-100">
@@ -413,8 +409,8 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                       </div>
                     </td>
                     
-                    <td className="py-3 px-6 text-center bg-purple-50/10 group-hover:bg-purple-50/30 transition-colors">
-                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-xl font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-100 text-emerald-800 border-emerald-200" : bonus < 0 ? "bg-red-100 text-red-800 border-red-200" : "bg-slate-100 text-slate-600 border-slate-200")}>
+                    <td className="py-3 px-6 text-center bg-purple-50/20 group-hover:bg-purple-50/40 transition-colors shadow-inner">
+                      <div className={cn("inline-flex items-center justify-center px-4 py-1.5 rounded-xl font-black text-[14px] border shadow-sm w-24", bonus > 0 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : bonus < 0 ? "bg-rose-50 text-rose-600 border-rose-200" : "bg-white text-slate-600 border-slate-200")}>
                         {bonus > 0 ? "+" : ""}{formatPercent(bonus)}
                       </div>
                     </td>
@@ -422,12 +418,12 @@ export default function IndicatorsTable({ period, partner, category: initialCate
                 );
               })}
 
-              <tr className="bg-emerald-50 border-t-4 border-emerald-200/80">
+              <tr className="bg-emerald-50 border-t-4 border-emerald-200/80 backdrop-blur-md">
                 <td colSpan={8} className="py-6 px-6 text-right font-black text-emerald-900 text-[16px] uppercase tracking-wider">
                   Total Bonus {category}
                 </td>
                 <td className="py-6 px-6 text-center">
-                  <div className={cn("inline-flex items-center justify-center px-6 py-3 rounded-xl font-black text-[18px] shadow-lg border-2", totalBonus >= 0 ? "bg-emerald-500 text-white border-emerald-400" : "bg-red-500 text-white border-red-400")}>
+                  <div className={cn("inline-flex items-center justify-center px-6 py-3 rounded-xl font-black text-[18px] shadow-lg border-2 bg-white", totalBonus >= 0 ? "text-emerald-600 border-emerald-400" : "text-rose-600 border-rose-400")}>
                     {totalBonus > 0 ? "+" : ""}{(totalBonus * 100).toFixed(2)}%
                   </div>
                 </td>

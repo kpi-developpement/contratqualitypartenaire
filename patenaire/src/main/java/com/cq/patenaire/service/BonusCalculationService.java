@@ -29,9 +29,6 @@ public class BonusCalculationService {
         return calculateBonusInternal(report, config);
     }
 
-    // ==========================================
-    // NOUVEAU: CALCULER POUR TOUT LE MONDE EN 1 SEUL APPEL
-    // ==========================================
     public Map<String, Map<String, BonusResultItem>> calculateBonusForAll(String period, BonusConfigRequest config) {
         List<MonthlyReport> reports = repository.findByPeriod(period);
         Map<String, Map<String, BonusResultItem>> allResults = new HashMap<>();
@@ -43,9 +40,6 @@ public class BonusCalculationService {
         return allResults;
     }
 
-    // ==========================================
-    // MOTEUR DE CALCUL INTERNE (Réutilisable)
-    // ==========================================
     private Map<String, BonusResultItem> calculateBonusInternal(MonthlyReport report, BonusConfigRequest config) {
         double totalDenumR1 = calculateTotalDenumR1(report);
         double totalDenumR2 = calculateTotalDenumR2(report);
@@ -67,44 +61,80 @@ public class BonusCalculationService {
                 if (totalDenumR1 > 0) pdm = stat.getDenum() / totalDenumR1;
             }
 
+            // Pour REE et AUDIT, on ne divise pas par 100 car ce sont des valeurs brutes (jours/heures)
             double divisor = (indicatorId.equals("REE") || indicatorId.equals("AUDIT")) ? 1.0 : 100.0;
             double tMin = target.getPointMin() / divisor;
             double tMax = target.getPointMax() / divisor;
+
             double bMin = target.getBonusMin() != null ? target.getBonusMin() / 100.0 : config.getBonusMin() / 100.0;
             double bMax = target.getBonusMax() != null ? target.getBonusMax() / 100.0 : config.getBonusMax() / 100.0;
 
             double bonus = 0.0;
+            double ratio = 0.0;
 
+            // Formule de base d'interpolation: (E - G) / (H - G)
+            if (tMax != tMin) {
+                ratio = (resultat - tMin) / (tMax - tMin);
+            }
+
+            // ==========================================
+            // L'ALGORITHME EXACT DE TON EXCEL (Moteur Mathématique)
+            // ==========================================
+
+            // 1. RANG 1 & RANG 2 (Utilise le PDM et le Ratio au Carré comme Facteur G)
             if (indicatorId.startsWith("PLP") || indicatorId.startsWith("Construction") || indicatorId.startsWith("Hotline") || indicatorId.startsWith("RANG2")) {
                 if (resultat <= tMin) bonus = bMin * pdm;
                 else if (resultat >= tMax) bonus = bMax * pdm;
-                else if (tMax != tMin) bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * pdm * config.getFacteurG29();
+                else bonus = ratio * bMax * pdm * ratio; // Le fameux G29, G30... est en fait (E-G)/(H-G) * lui-même !
             }
+
+            // 2. SATCLI RACC (OK & NOK) et SAV Performance (Linéaire standard)
             else if (indicatorId.equals("SATCLI_OK") || indicatorId.equals("SATCLI_NOK") || indicatorId.equals("SAV_PERF")) {
                 if (resultat <= tMin) bonus = bMin;
                 else if (resultat >= tMax) bonus = bMax;
-                else if (tMax != tMin) bonus = ((resultat - tMin) / (tMax - tMin)) * bMax;
+                else bonus = ratio * bMax;
             }
+
+            // 3. GEM NOK (Linéaire au carré selon la règle)
             else if (indicatorId.equals("GEM_NOK")) {
                 if (resultat <= tMin) bonus = bMin;
                 else if (resultat >= tMax) bonus = bMax;
-                else if (tMax != tMin) bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * config.getFacteurG44();
+                else bonus = ratio * bMax * ratio; // Facteur G44 = Ratio
             }
-            else if (indicatorId.equals("SAV_SECURISATION") || indicatorId.equals("AUDIT") || indicatorId.equals("SAV_SATCLI") ||
-                    indicatorId.equals("SAV_CCR") || indicatorId.equals("REE") || indicatorId.equals("SAV_TNH") ||
-                    indicatorId.equals("PLAINTE") || indicatorId.equals("TNH") || indicatorId.equals("CADRAGE") || indicatorId.equals("INCOHERENCE_PTO")) {
 
+            // 4. INCOHERENCE PTO (Règle spécifique inversée - plus c'est grand, pire c'est)
+            else if (indicatorId.equals("INCOHERENCE_PTO")) {
+                if (resultat >= tMax) bonus = bMin;
+                else if (resultat <= tMin) bonus = bMax;
+                else bonus = (1 - ratio) * bMax; // Logique d'anomalie
+            }
+
+            // 5. TNH et CADRAGE RACC (Logique Inversée au Carré)
+            else if (indicatorId.equals("TNH") || indicatorId.equals("CADRAGE")) {
+                if (resultat >= tMin) bonus = bMin; // Exemple: si 0.71% >= 1.50% (Faux, c'est inversé)
+                else if (resultat <= tMax) bonus = bMax;
+                else bonus = ratio * bMax * ratio; // Facteur G45, G46 = Ratio
+            }
+
+            // 6. TAUX DE PLAINTE (Logique Inversée Linéaire)
+            else if (indicatorId.equals("PLAINTE")) {
                 if (resultat >= tMin) bonus = bMin;
                 else if (resultat <= tMax) bonus = bMax;
-                else if (tMax != tMin) {
-                    double facteur = 1.0;
-                    if (indicatorId.equals("TNH")) facteur = config.getFacteurG45();
-                    if (indicatorId.equals("CADRAGE")) facteur = config.getFacteurG46();
-                    bonus = ((resultat - tMin) / (tMax - tMin)) * bMax * facteur;
-                }
+                else bonus = ratio * bMax;
             }
+
+            // 7. TOUS LES INDICATEURS SAV RESTANTS (Logique Inversée Linéaire)
+            // (Sécurisation, Audit, Satcli SAV, CCR, REE, TNH SAV)
+            else if (indicatorId.startsWith("SAV_") || indicatorId.equals("AUDIT") || indicatorId.equals("REE")) {
+                // =SI(D>=F;H;SI(D<=G;I;(D-F)/(G-F)*I)) => Result >= Min -> bMin. Result <= Max -> bMax.
+                if (resultat >= tMin) bonus = bMin;
+                else if (resultat <= tMax) bonus = bMax;
+                else bonus = ratio * bMax;
+            }
+
             results.put(indicatorId, new BonusResultItem(indicatorId, resultat, pdm, bonus));
         }
+
         return results;
     }
 
@@ -144,6 +174,8 @@ public class BonusCalculationService {
                 case "TNH": return report.getTnh();
                 case "CADRAGE": return report.getCadrage();
                 case "INCOHERENCE_PTO": return report.getIncoherencePto();
+
+                // SAV
                 case "AUDIT": return report.getAudit();
                 case "REE": return report.getRee();
                 case "SAV_SATCLI": return report.getSavSatcli();

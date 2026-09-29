@@ -5,11 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import FileUpload from "@/components/FileUpload";
 import IndicatorsTable from "@/components/IndicatorsTable";
 import PartnerOverview from "@/components/PartnerOverview";
-import FadeIn from "@/components/animations/FadeIn";
-import SlideUp from "@/components/animations/SlideUp";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { ReportResponse } from "@/types";
-import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown, Network, Crop, Zap, Wrench, ClipboardCheck, Timer, Trash2, Loader2, ArrowLeft, DatabaseZap, ChevronDown, Check, X } from "lucide-react";
+import { BarChart3, AlertCircle, FileSpreadsheet, Star, Frown, Network, Crop, Zap, Wrench, ClipboardCheck, Timer, Trash2, Loader2, ArrowLeft, DatabaseZap, ChevronDown, Check, X, Globe2 } from "lucide-react";
 import { fetchReport, deleteReport, uploadRangFile, uploadSatcliFile, uploadPlainteFile, uploadPtoFile, uploadCadrageFile, uploadGemNokFile, uploadSavFile, uploadAuditFile, uploadReeFile, calculateAllBonuses } from "@/services/api";
 import { cn } from "@/lib/utils";
 
@@ -82,14 +80,13 @@ export default function Home() {
 
   useEffect(() => { fetchAndCalculate(period); }, [period, targets]);
 
-  // LA PAGE NE SE FERME PLUS TOUTE SEULE!
   const handleSuccess = () => {
     setError(null);
     fetchAndCalculate(period);
   };
 
   const handleDeletePeriod = async () => {
-    if (confirm(`⚠️ ATTENTION ⚠️\nSupprimer TOUTES les données pour la période ${period} ?`)) {
+    if (confirm(`Action irréversible.\nVoulez-vous vraiment supprimer toutes les données de la période ${period} ?`)) {
       setIsDeleting(true);
       try {
         await deleteReport(period);
@@ -111,8 +108,6 @@ export default function Home() {
 
   const currentReport = selectedPartner ? (allReports.find(r => (r.partenaire || 'GLOBAL') === selectedPartner) || null) : null;
   const hasData = allReports.length > 0;
-  
-  // Safe unique partners
   const uniquePartners = ["GLOBAL", ...Array.from(new Set(allReports.map(r => r.partenaire || 'GLOBAL').filter(p => p !== 'GLOBAL')))];
 
   return (
@@ -120,6 +115,7 @@ export default function Home() {
       <InteractiveBackground />
       <div className="max-w-[1400px] mx-auto space-y-8 relative z-10 p-4 md:p-8 lg:p-12">
         
+        {/* TOP NAVBAR */}
         <FadeIn delay={0.1} className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white/80 backdrop-blur-2xl p-4 rounded-3xl border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sticky top-4 z-50">
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setViewState('OVERVIEW')}>
             <div className="p-2.5 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 text-white shadow-lg group-hover:scale-105 transition-transform">
@@ -139,17 +135,17 @@ export default function Home() {
             <div className="relative shrink-0 z-50">
               <button onClick={() => setIsPartnerDropdownOpen(!isPartnerDropdownOpen)} className="flex items-center gap-3 bg-white px-5 py-2.5 rounded-full shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
                 <span className="font-extrabold text-slate-400 text-[11px] uppercase tracking-widest">Partenaire</span>
-                <span className="font-black text-blue-700 text-sm max-w-[100px] truncate">{selectedPartner === 'GLOBAL' ? '🌍 Global' : selectedPartner}</span>
+                <span className="font-black text-blue-700 text-sm max-w-[100px] truncate">{selectedPartner === 'GLOBAL' ? 'Global' : selectedPartner}</span>
                 <ChevronDown size={14} className={cn("text-slate-400 transition-transform duration-300", isPartnerDropdownOpen ? "rotate-180" : "")} />
               </button>
               <AnimatePresence>
                 {isPartnerDropdownOpen && (
                   <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 25 }} className="absolute right-0 top-full mt-2 w-64 bg-white/95 backdrop-blur-xl border border-slate-200/80 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] rounded-2xl overflow-hidden flex flex-col max-h-[300px]">
-                    <div className="p-2 border-b border-slate-100 bg-slate-50/50"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Sélectionner une vue</p></div>
+                    <div className="p-2 border-b border-slate-100 bg-slate-50/50"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Sélectionner</p></div>
                     <div className="overflow-y-auto p-2 space-y-1 custom-scrollbar">
                       {uniquePartners.map(p => (
                         <button key={p} onClick={() => handlePartnerClick(p)} className={cn("w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold transition-all text-left", selectedPartner === p ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900")}>
-                          <span className="truncate">{p === 'GLOBAL' ? '🌍 Vue Globale' : `🏢 ${p}`}</span>
+                          <span className="truncate flex items-center gap-2">{p === 'GLOBAL' ? <Globe2 size={16}/> : null} {p === 'GLOBAL' ? 'Vue Globale' : p}</span>
                           {selectedPartner === p && <Check size={16} className="text-blue-600 shrink-0" />}
                         </button>
                       ))}
@@ -160,27 +156,28 @@ export default function Home() {
             </div>
 
             <button onClick={() => setShowUploads(!showUploads)} className={cn("flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all shrink-0 shadow-sm", showUploads ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900")}>
-              <DatabaseZap size={16} className={showUploads ? "text-blue-400" : ""} /> Data
+              <DatabaseZap size={16} className={showUploads ? "text-blue-400" : ""} /> Fichiers
             </button>
 
-            <button onClick={handleDeletePeriod} disabled={isDeleting || !hasData} className="p-2.5 bg-white rounded-full border border-slate-200 shadow-sm text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all disabled:opacity-50 shrink-0 group">
+            <button onClick={handleDeletePeriod} disabled={isDeleting || !hasData} className="p-2.5 bg-white rounded-full border border-slate-200 shadow-sm text-rose-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 transition-all disabled:opacity-50 shrink-0 group" title="Supprimer la période">
               {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} className="group-hover:scale-110 transition-transform" />}
             </button>
           </div>
         </FadeIn>
 
         {error && (
-          <FadeIn className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 shadow-sm">
-            <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={20} /><div><h3 className="text-sm font-bold text-red-800">Erreur</h3><p className="text-sm text-red-600 mt-1">{error}</p></div>
+          <FadeIn className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 shadow-sm">
+            <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={20} /><div><h3 className="text-sm font-bold text-rose-800">Erreur</h3><p className="text-sm text-rose-600 mt-1">{error}</p></div>
           </FadeIn>
         )}
 
+        {/* UPLOADS DRAWER */}
         <AnimatePresence>
           {showUploads && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
               <div className="bg-slate-50/80 backdrop-blur-sm border border-slate-200/80 rounded-[2rem] p-6 md:p-8 space-y-6 shadow-inner relative">
                 
-                <button onClick={() => setShowUploads(false)} className="absolute top-6 right-6 p-2 bg-white rounded-full border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-100 shadow-sm transition-all" title="Fermer la zone d'import">
+                <button onClick={() => setShowUploads(false)} className="absolute top-6 right-6 p-2 bg-white rounded-full border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-100 shadow-sm transition-all">
                   <X size={18} strokeWidth={2.5} />
                 </button>
 
@@ -204,7 +201,7 @@ export default function Home() {
                     <motion.div key="racc" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                       <FileUpload title="RANG" description="Source Principale" icon={<FileSpreadsheet size={24} className="text-blue-600" />} uploadAction={(f) => uploadRangFile(f, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
                       <FileUpload title="SATCLI" description="OK & NOK" icon={<Star size={24} className="text-teal-600" />} uploadAction={(f) => uploadSatcliFile(f, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
-                      <FileUpload title="Plainte" description="Taux & Volume" icon={<Frown size={24} className="text-red-500" />} uploadAction={(f) => uploadPlainteFile(f, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
+                      <FileUpload title="Plainte" description="Taux & Volume" icon={<Frown size={24} className="text-rose-500" />} uploadAction={(f) => uploadPlainteFile(f, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
                       <FileUpload title="PTO" description="Incohérence PTO" icon={<Network size={24} className="text-orange-600" />} uploadAction={(f) => uploadPtoFile(f, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
                       <FileUpload title="Cadrage" description="MAL_CADREE" icon={<Crop size={24} className="text-indigo-600" />} uploadAction={(f) => uploadCadrageFile(f, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
                       <FileUpload title="GEM NOK" description="TVC et Flg" icon={<Zap size={24} className="text-cyan-600" />} uploadAction={(f) => uploadGemNokFile(f, period)} onUploadSuccess={handleSuccess} onUploadError={setError} />
