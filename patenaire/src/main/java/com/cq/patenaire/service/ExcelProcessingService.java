@@ -38,9 +38,7 @@ public class ExcelProcessingService {
             if (r.getPartenaire() == null || r.getPartenaire().trim().isEmpty()) {
                 r.setPartenaire("GLOBAL");
             }
-            if ("GLOBAL".equals(r.getPartenaire())) {
-                hasGlobal = true;
-            }
+            if ("GLOBAL".equals(r.getPartenaire())) hasGlobal = true;
         }
 
         if (!hasGlobal) {
@@ -51,9 +49,6 @@ public class ExcelProcessingService {
         return reports;
     }
 
-    // ==========================================
-    // NOUVEAU: SUPPRESSION DE PÉRIODE
-    // ==========================================
     @Transactional
     public void deleteReportsByPeriod(String period) {
         List<MonthlyReport> reports = repository.findByPeriod(period);
@@ -73,9 +68,7 @@ public class ExcelProcessingService {
             map.put(part, r);
         }
 
-        if (!map.containsKey("GLOBAL")) {
-            map.put("GLOBAL", new MonthlyReport(period, "GLOBAL"));
-        }
+        if (!map.containsKey("GLOBAL")) map.put("GLOBAL", new MonthlyReport(period, "GLOBAL"));
         return map;
     }
 
@@ -87,9 +80,26 @@ public class ExcelProcessingService {
         return new ArrayList<>(reports.values());
     }
 
+    // ==========================================
+    // EXTRACTION DU PARTENAIRE (FIX : INCONNU)
+    // ==========================================
+    private String extractPartner(Map<String, String> record, Map<String, String> allPartners) {
+        String kyn = getFlexibleRecord(record, "kyn");
+        if (kyn == null || kyn.trim().isEmpty()) kyn = getFlexibleRecord(record, "id_tecnow");
+
+        // Si vide ou non trouvé, on retourne "INCONNU"
+        if (kyn == null || kyn.trim().isEmpty()) return "INCONNU";
+
+        String partnerName = allPartners.get(kyn.trim().toUpperCase());
+        return partnerName != null ? partnerName : "INCONNU";
+    }
+
+    // ==========================================
+    // RACC
+    // ==========================================
     public List<MonthlyReport> processRangFile(MultipartFile file, String period) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
-        Map<String, String> activePartners = kyntusApiService.getActivePartners();
+        Map<String, String> allPartners = kyntusApiService.getAllPartners();
 
         for (MonthlyReport r : reports.values()) r.initDefaults();
 
@@ -98,25 +108,23 @@ public class ExcelProcessingService {
             String rangRdvRaw = record.get("rang_rdv (copie)");
             String statutCrRaw = record.get("grp_statut_crinstall_mnt");
             String motfKoRaw = record.get("motf_ko_cr_inst_first_crinstall_mnt");
-            String partenaire = extractPartner(record, activePartners);
+            String partenaire = extractPartner(record, allPartners);
 
             extractAndComputeRowRang(zoneStatutRaw, rangRdvRaw, statutCrRaw, motfKoRaw, reports.get("GLOBAL"));
 
-            if (partenaire != null) {
-                MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> {
-                    MonthlyReport r = new MonthlyReport(period, p);
-                    r.initDefaults();
-                    return r;
-                });
-                extractAndComputeRowRang(zoneStatutRaw, rangRdvRaw, statutCrRaw, motfKoRaw, pReport);
-            }
+            MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> {
+                MonthlyReport r = new MonthlyReport(period, p);
+                r.initDefaults();
+                return r;
+            });
+            extractAndComputeRowRang(zoneStatutRaw, rangRdvRaw, statutCrRaw, motfKoRaw, pReport);
         });
         return saveAndReturn(reports);
     }
 
     public List<MonthlyReport> processSatcliFile(MultipartFile file, String period) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
-        Map<String, String> activePartners = kyntusApiService.getActivePartners();
+        Map<String, String> allPartners = kyntusApiService.getAllPartners();
 
         for (MonthlyReport r : reports.values()) {
             r.setSatcliOk(new IndicatorResult(0, 0, 0.0));
@@ -126,24 +134,22 @@ public class ExcelProcessingService {
         processGenericFile(file, record -> {
             String statutCrRaw = record.get("grp_statut_crinstall_mnt");
             String valrNotGlblRaw = record.get("valr not glbl");
-            String partenaire = extractPartner(record, activePartners);
+            String partenaire = extractPartner(record, allPartners);
 
             extractAndComputeRowSatcli(statutCrRaw, valrNotGlblRaw, reports.get("GLOBAL"));
-            if (partenaire != null) {
-                MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
-                if (pReport.getSatcliOk() == null) {
-                    pReport.setSatcliOk(new IndicatorResult(0,0,0.0));
-                    pReport.setSatcliNok(new IndicatorResult(0,0,0.0));
-                }
-                extractAndComputeRowSatcli(statutCrRaw, valrNotGlblRaw, pReport);
+            MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
+            if (pReport.getSatcliOk() == null) {
+                pReport.setSatcliOk(new IndicatorResult(0,0,0.0));
+                pReport.setSatcliNok(new IndicatorResult(0,0,0.0));
             }
+            extractAndComputeRowSatcli(statutCrRaw, valrNotGlblRaw, pReport);
         });
         return saveAndReturn(reports);
     }
 
     public List<MonthlyReport> processPlainteFile(MultipartFile file, String period) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
-        Map<String, String> activePartners = kyntusApiService.getActivePartners();
+        Map<String, String> allPartners = kyntusApiService.getAllPartners();
 
         if (reports.get("GLOBAL").getTnh() == null || reports.get("GLOBAL").getTnh().getDenum() == 0) {
             throw new RuntimeException("Veuillez d'abord importer le fichier RANG/TNH.");
@@ -159,61 +165,55 @@ public class ExcelProcessingService {
             int volume = 0;
             try { if (volTicketRaw != null && !volTicketRaw.trim().isEmpty()) volume = (int) Double.parseDouble(volTicketRaw.trim()); } catch (Exception ignored) {}
 
-            String partenaire = extractPartner(record, activePartners);
+            String partenaire = extractPartner(record, allPartners);
             reports.get("GLOBAL").getTauxPlainte().setNum(reports.get("GLOBAL").getTauxPlainte().getNum() + volume);
 
-            if (partenaire != null) {
-                MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
-                if (pReport.getTauxPlainte() == null) pReport.setTauxPlainte(new IndicatorResult(0, pReport.getTnh() != null ? pReport.getTnh().getDenum() : 0, 0.0));
-                pReport.getTauxPlainte().setNum(pReport.getTauxPlainte().getNum() + volume);
-            }
+            MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
+            if (pReport.getTauxPlainte() == null) pReport.setTauxPlainte(new IndicatorResult(0, pReport.getTnh() != null ? pReport.getTnh().getDenum() : 0, 0.0));
+            pReport.getTauxPlainte().setNum(pReport.getTauxPlainte().getNum() + volume);
         });
         return saveAndReturn(reports);
     }
 
     public List<MonthlyReport> processPtoFile(MultipartFile file, String period) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
-        Map<String, String> activePartners = kyntusApiService.getActivePartners();
+        Map<String, String> allPartners = kyntusApiService.getAllPartners();
 
         for (MonthlyReport r : reports.values()) r.setIncoherencePto(new IndicatorResult(0, 0, 0.0));
 
         processGenericFile(file, record -> {
             String valRaw = record.get("pto magouille");
-            String partenaire = extractPartner(record, activePartners);
+            String partenaire = extractPartner(record, allPartners);
 
             updatePtoCadrage(valRaw, reports.get("GLOBAL"), "PTO");
-            if (partenaire != null) {
-                MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
-                if (pReport.getIncoherencePto() == null) pReport.setIncoherencePto(new IndicatorResult(0,0,0.0));
-                updatePtoCadrage(valRaw, pReport, "PTO");
-            }
+            MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
+            if (pReport.getIncoherencePto() == null) pReport.setIncoherencePto(new IndicatorResult(0,0,0.0));
+            updatePtoCadrage(valRaw, pReport, "PTO");
         });
         return saveAndReturn(reports);
     }
 
     public List<MonthlyReport> processCadrageFile(MultipartFile file, String period) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
-        Map<String, String> activePartners = kyntusApiService.getActivePartners();
+        Map<String, String> allPartners = kyntusApiService.getAllPartners();
 
         for (MonthlyReport r : reports.values()) r.setCadrage(new IndicatorResult(0, 0, 0.0));
 
         processGenericFile(file, record -> {
             String valRaw = record.get("mal_cadree");
-            String partenaire = extractPartner(record, activePartners);
+            String partenaire = extractPartner(record, allPartners);
 
             updatePtoCadrage(valRaw, reports.get("GLOBAL"), "CADRAGE");
-            if (partenaire != null) {
-                MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
-                if (pReport.getCadrage() == null) pReport.setCadrage(new IndicatorResult(0,0,0.0));
-                updatePtoCadrage(valRaw, pReport, "CADRAGE");
-            }
+            MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
+            if (pReport.getCadrage() == null) pReport.setCadrage(new IndicatorResult(0,0,0.0));
+            updatePtoCadrage(valRaw, pReport, "CADRAGE");
         });
         return saveAndReturn(reports);
     }
 
     public List<MonthlyReport> processGemNokFile(MultipartFile file, String period) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
-        Map<String, String> activePartners = kyntusApiService.getActivePartners();
+        Map<String, String> allPartners = kyntusApiService.getAllPartners();
 
         for (MonthlyReport r : reports.values()) r.setGemNok(new IndicatorResult(0, 0, 0.0));
 
@@ -222,21 +222,19 @@ public class ExcelProcessingService {
             String flgGemRaw = record.get("flg gem");
             String statutCrRaw = record.get("grp_statut_crinstall_mnt");
             if (statutCrRaw == null) statutCrRaw = record.get("grp statut crinstall mnt");
-            String partenaire = extractPartner(record, activePartners);
+            String partenaire = extractPartner(record, allPartners);
 
             updateGemNok(tvcRaw, flgGemRaw, statutCrRaw, reports.get("GLOBAL"));
-            if (partenaire != null) {
-                MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
-                if (pReport.getGemNok() == null) pReport.setGemNok(new IndicatorResult(0,0,0.0));
-                updateGemNok(tvcRaw, flgGemRaw, statutCrRaw, pReport);
-            }
+            MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
+            if (pReport.getGemNok() == null) pReport.setGemNok(new IndicatorResult(0,0,0.0));
+            updateGemNok(tvcRaw, flgGemRaw, statutCrRaw, pReport);
         });
         return saveAndReturn(reports);
     }
 
     public List<MonthlyReport> processSavFile(MultipartFile file, String period) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
-        Map<String, String> activePartners = kyntusApiService.getActivePartners();
+        Map<String, String> allPartners = kyntusApiService.getAllPartners();
 
         for (MonthlyReport r : reports.values()) {
             r.setSavSatcli(new IndicatorResult(0, 0, 0.0));
@@ -247,19 +245,17 @@ public class ExcelProcessingService {
         }
 
         processGenericFile(file, record -> {
-            String partenaire = extractPartner(record, activePartners);
+            String partenaire = extractPartner(record, allPartners);
             updateSavRow(record, reports.get("GLOBAL"));
-            if (partenaire != null) {
-                MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
-                if (pReport.getSavPerf() == null) {
-                    pReport.setSavSatcli(new IndicatorResult(0, 0, 0.0));
-                    pReport.setSavSecurisation(new IndicatorResult(0, 0, 0.0));
-                    pReport.setSavTnh(new IndicatorResult(0, 0, 0.0));
-                    pReport.setSavCcr(new IndicatorResult(0, 0, 0.0));
-                    pReport.setSavPerf(new IndicatorResult(0, 0, 0.0));
-                }
-                updateSavRow(record, pReport);
+            MonthlyReport pReport = reports.computeIfAbsent(partenaire, p -> new MonthlyReport(period, p));
+            if (pReport.getSavPerf() == null) {
+                pReport.setSavSatcli(new IndicatorResult(0, 0, 0.0));
+                pReport.setSavSecurisation(new IndicatorResult(0, 0, 0.0));
+                pReport.setSavTnh(new IndicatorResult(0, 0, 0.0));
+                pReport.setSavCcr(new IndicatorResult(0, 0, 0.0));
+                pReport.setSavPerf(new IndicatorResult(0, 0, 0.0));
             }
+            updateSavRow(record, pReport);
         });
         return saveAndReturn(reports);
     }
@@ -274,20 +270,18 @@ public class ExcelProcessingService {
 
     private List<MonthlyReport> processPercentileFile(MultipartFile file, String period, String type) throws Exception {
         Map<String, MonthlyReport> reports = loadAllReportsForPeriod(period);
-        Map<String, String> activePartners = kyntusApiService.getActivePartners();
+        Map<String, String> allPartners = kyntusApiService.getAllPartners();
         Map<String, List<Double>> partnerValues = new HashMap<>();
         partnerValues.put("GLOBAL", new ArrayList<>());
 
         processGenericFile(file, record -> {
             String valStr = getFlexibleRecord(record, "percentile délai traitement mainteneur");
-            String partenaire = extractPartner(record, activePartners);
+            String partenaire = extractPartner(record, allPartners);
             if (valStr != null && !valStr.trim().isEmpty()) {
                 try {
                     double val = Double.parseDouble(valStr.trim().replace(",", "."));
                     partnerValues.get("GLOBAL").add(val);
-                    if (partenaire != null) {
-                        partnerValues.computeIfAbsent(partenaire, p -> new ArrayList<>()).add(val);
-                    }
+                    partnerValues.computeIfAbsent(partenaire, p -> new ArrayList<>()).add(val);
                 } catch (NumberFormatException ignored) {}
             }
         });
@@ -300,15 +294,6 @@ public class ExcelProcessingService {
             else r.setRee(result);
         }
         return saveAndReturn(reports);
-    }
-
-    // ==========================================
-    // HELPERS EXTRACT
-    // ==========================================
-    private String extractPartner(Map<String, String> record, Map<String, String> activePartners) {
-        String kyn = getFlexibleRecord(record, "kyn");
-        if (kyn == null || kyn.trim().isEmpty()) kyn = getFlexibleRecord(record, "id_tecnow");
-        return (kyn != null) ? activePartners.get(kyn.trim().toUpperCase()) : null;
     }
 
     private String getFlexibleRecord(Map<String, String> recordMap, String keyword) {

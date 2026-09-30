@@ -2,8 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-// FIX: Zedt Network w Cpu lfo9 👇
-import { Globe2, Building2, Search, ArrowUpDown, Filter, LayoutGrid, Network, Cpu, ArrowRight } from "lucide-react";
+import { Globe2, Building2, Search, ArrowUpDown, Filter, LayoutGrid, Network, Cpu, ArrowRight, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PartnerOverviewProps {
@@ -12,79 +11,62 @@ interface PartnerOverviewProps {
   onPartnerSelect: (partner: string) => void;
 }
 
+// 🚀 OPTIMISATION: Hover CSS Pur au lieu du JS (Framer Motion sur des listes = Lag)
 const PartnerCard = ({ partner, sums, onClick }: { partner: string, sums: any, onClick: () => void }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
+  const isUnknown = partner === "INCONNU";
+  
   return (
-    <motion.div
-      layout
-      layoutId={`card-${partner}`}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
+    <div 
       onClick={onClick}
-      className={cn(
-        "relative rounded-3xl p-6 transition-colors duration-500 cursor-pointer overflow-hidden flex flex-col shadow-sm border",
-        isHovered 
-          ? "bg-slate-900 border-slate-800 text-white min-h-[280px] shadow-[0_20px_50px_rgba(15,23,42,0.3)]" 
-          : "bg-white/80 backdrop-blur-xl border-slate-200/80 text-slate-800 min-h-[200px]"
-      )}
+      className="group relative rounded-3xl p-6 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col border bg-white/80 backdrop-blur-xl border-slate-200/80 hover:bg-slate-900 hover:border-slate-800 hover:shadow-[0_20px_50px_rgba(15,23,42,0.3)] min-h-[200px] hover:min-h-[250px] will-change-transform"
     >
-      <AnimatePresence>
-        {isHovered && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}
-            className="absolute -bottom-10 -right-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl z-0"
-          />
-        )}
-      </AnimatePresence>
+      {/* Effet Glow CSS Pur */}
+      <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 will-change-transform pointer-events-none" />
 
-      <motion.div layout className="flex justify-between items-start relative z-10">
-        <motion.div layout className="flex items-center gap-3">
-          <motion.div layout className={cn("flex items-center justify-center rounded-2xl w-12 h-12 transition-colors duration-500", isHovered ? "bg-blue-500/20 text-blue-400" : "bg-slate-100 text-slate-500 border border-slate-200/50")}>
-            <Building2 size={22} />
-          </motion.div>
-          <motion.h3 layout className={cn("font-black text-lg leading-tight w-36 truncate transition-colors duration-500", isHovered ? "text-white" : "text-slate-800")} title={partner}>
-            {partner}
-          </motion.h3>
-        </motion.div>
-        
-        <motion.div layout className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500", isHovered ? "bg-blue-500 text-white" : "bg-slate-50 text-slate-400")}>
-          <ArrowRight size={18} className={cn("transition-transform duration-300", isHovered ? "-rotate-45" : "")} />
-        </motion.div>
-      </motion.div>
-
-      <motion.div layout className="mt-auto space-y-3 relative z-10">
-        
-        <motion.div layout className={cn("flex items-center justify-between p-3 rounded-2xl border transition-colors duration-500", isHovered ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-100")}>
-          <div className="flex items-center gap-2">
-            <Network size={16} className={cn(isHovered ? "text-slate-400" : "text-slate-500")} />
-            <span className={cn("text-xs font-black uppercase tracking-widest", isHovered ? "text-slate-300" : "text-slate-500")}>RACC</span>
+      <div className="flex justify-between items-start relative z-10 transition-transform duration-300">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center rounded-2xl w-12 h-12 transition-colors duration-300 bg-slate-100 text-slate-500 border border-slate-200/50 group-hover:bg-blue-500/20 group-hover:text-blue-400 group-hover:border-blue-500/30">
+            {isUnknown ? <UserX size={22} /> : <Building2 size={22} />}
           </div>
-          <div className={cn("text-lg font-black tracking-tighter", sums.racc >= 0 ? (isHovered ? "text-emerald-400" : "text-emerald-600") : (isHovered ? "text-rose-400" : "text-rose-600"))}>
+          <h3 className="font-black text-lg leading-tight w-36 truncate transition-colors duration-300 text-slate-800 group-hover:text-white" title={partner}>
+            {partner}
+          </h3>
+        </div>
+        
+        <div className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 bg-slate-50 text-slate-400 group-hover:bg-blue-500 group-hover:text-white">
+          <ArrowRight size={18} className="transition-transform duration-300 group-hover:-rotate-45" />
+        </div>
+      </div>
+
+      <div className="mt-auto space-y-3 relative z-10">
+        {/* RACC */}
+        <div className="flex items-center justify-between p-3 rounded-2xl border transition-colors duration-300 bg-slate-50 border-slate-100 group-hover:bg-white/5 group-hover:border-white/10">
+          <div className="flex items-center gap-2">
+            <Network size={16} className="text-slate-500 group-hover:text-slate-400 transition-colors" />
+            <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">RACC</span>
+          </div>
+          <div className={cn("text-lg font-black tracking-tighter transition-colors", sums.racc >= 0 ? "text-emerald-600 group-hover:text-emerald-400" : "text-rose-600 group-hover:text-rose-400")}>
             {sums.racc > 0 ? '+' : ''}{(sums.racc * 100).toFixed(2)}%
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div layout className={cn("flex items-center justify-between p-3 rounded-2xl border transition-colors duration-500", isHovered ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-100")}>
+        {/* SAV */}
+        <div className="flex items-center justify-between p-3 rounded-2xl border transition-colors duration-300 bg-slate-50 border-slate-100 group-hover:bg-white/5 group-hover:border-white/10">
           <div className="flex items-center gap-2">
-            <Cpu size={16} className={cn(isHovered ? "text-slate-400" : "text-slate-500")} />
-            <span className={cn("text-xs font-black uppercase tracking-widest", isHovered ? "text-slate-300" : "text-slate-500")}>SAV</span>
+            <Cpu size={16} className="text-slate-500 group-hover:text-slate-400 transition-colors" />
+            <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">SAV</span>
           </div>
-          <div className={cn("text-lg font-black tracking-tighter", sums.sav >= 0 ? (isHovered ? "text-emerald-400" : "text-emerald-600") : (isHovered ? "text-rose-400" : "text-rose-600"))}>
+          <div className={cn("text-lg font-black tracking-tighter transition-colors", sums.sav >= 0 ? "text-emerald-600 group-hover:text-emerald-400" : "text-rose-600 group-hover:text-rose-400")}>
             {sums.sav > 0 ? '+' : ''}{(sums.sav * 100).toFixed(2)}%
           </div>
-        </motion.div>
-
-      </motion.div>
+        </div>
+      </div>
       
-      <AnimatePresence>
-        {isHovered && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="pt-4 text-center relative z-10">
-            <span className="text-xs font-bold text-blue-400 tracking-widest uppercase">Voir les détails du contrat</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {/* Texte Call to action */}
+      <div className="pt-4 text-center relative z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+        <span className="text-xs font-bold text-blue-400 tracking-widest uppercase">Voir les détails</span>
+      </div>
+    </div>
   );
 };
 
@@ -159,7 +141,7 @@ export default function PartnerOverview({ period, overviewBonuses, onPartnerSele
         </motion.div>
       )}
 
-      {/* 2. TOOLBAR LUXE */}
+      {/* TOOLBAR LUXE */}
       <div className="flex flex-col lg:flex-row items-center justify-between gap-4 p-3 bg-white/90 rounded-2xl border border-slate-200 shadow-sm sticky top-[88px] z-30 backdrop-blur-2xl">
         <div className="relative w-full lg:w-96 group">
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
